@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ActiveTab,
   Region,
@@ -12,13 +12,10 @@ import {
 } from './types';
 import {
   initialKPIStats,
-  initialMarkets,
-  initialLaneExceptions,
-  initialPlannedAdjustments,
-  initialCustomerLanes,
   initialDatasets,
   initialValidationIssues
 } from './data/initialData';
+import { supabase } from './lib/supabaseClient';
 
 import { TopNavBar } from './components/TopNavBar';
 import { Sidebar } from './components/Sidebar';
@@ -39,13 +36,107 @@ export default function App() {
   const [teamContext, setTeamContext] = useState<'Pricing Team' | 'Operations'>('Pricing Team');
 
   // Application Data States
-  const [kpis] = useState<KPIStats>(initialKPIStats);
-  const [markets, setMarkets] = useState<MarketSummary[]>(initialMarkets);
-  const [laneExceptions, setLaneExceptions] = useState<LaneException[]>(initialLaneExceptions);
-  const [plannedAdjustments, setPlannedAdjustments] = useState<PlannedAdjustment[]>(initialPlannedAdjustments);
-  const [customerLanes, setCustomerLanes] = useState<CustomerRateLane[]>(initialCustomerLanes);
+  const [kpis] = useState<KPIStats>(initialKPIStats); // Keep KPIs static for now
+  const [markets, setMarkets] = useState<MarketSummary[]>([]);
+  const [laneExceptions, setLaneExceptions] = useState<LaneException[]>([]);
+  const [plannedAdjustments, setPlannedAdjustments] = useState<PlannedAdjustment[]>([]);
+  const [customerLanes, setCustomerLanes] = useState<CustomerRateLane[]>([]);
   const [datasets, setDatasets] = useState<DatasetItem[]>(initialDatasets);
   const [validationIssues, setValidationIssues] = useState<ValidationIssue[]>(initialValidationIssues);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchData() {
+      setIsLoading(true);
+      try {
+        const { data: mData } = await supabase.from('market_summaries').select('*');
+        if (mData) {
+          setMarkets(mData.map(m => ({
+            id: m.id,
+            name: m.name,
+            region: m.region as Region,
+            avgActual: m.avg_actual,
+            avgTarget: m.avg_target,
+            varianceDollars: m.variance_dollars,
+            variancePercent: m.variance_percent,
+            loads: m.loads,
+            trendStatus: m.trend_status as any,
+            status: m.status as any,
+            trendData: [50, 52, 48, 50, 51, 49, 50, 50] // mock trend
+          })));
+        }
+
+        const { data: leData } = await supabase.from('lane_exceptions').select('*');
+        if (leData) {
+          setLaneExceptions(leData.map(e => ({
+            id: e.id,
+            origin: e.origin,
+            destination: e.destination,
+            market: e.market as Region,
+            loads: e.loads,
+            currentTarget: e.current_target,
+            avgActual: e.avg_actual,
+            varDollars: e.var_dollars,
+            varPercent: e.var_percent,
+            confidence: e.confidence as any,
+            impact: e.impact as any,
+            adjustmentStatus: e.adjustment_status as any,
+            lastAdjustedTarget: e.last_adjusted_target,
+            adjustedDate: e.adjusted_date,
+            adjustedNotes: e.adjusted_notes
+          })));
+        }
+
+        const { data: paData } = await supabase.from('planned_adjustments').select('*');
+        if (paData) {
+          setPlannedAdjustments(paData.map(p => ({
+            id: p.id,
+            title: p.title,
+            changePercent: p.change_percent,
+            status: p.status as any,
+            effectiveDate: p.effective_date,
+            notes: p.notes
+          })));
+        }
+
+        const { data: crData } = await supabase.from('customer_rate_lanes').select('*');
+        if (crData) {
+          setCustomerLanes(crData.map(c => ({
+            id: c.id,
+            laneId: c.lane_id,
+            customerName: c.customer_name,
+            originCity: c.origin_city,
+            originState: c.origin_state,
+            destinationCity: c.destination_city,
+            destinationState: c.destination_state,
+            rawOrigin: `${c.origin_city}, ${c.origin_state}`,
+            rawDestination: `${c.destination_city}, ${c.destination_state}`,
+            baseRate: c.base_rate,
+            equipment: c.equipment,
+            serviceType: c.service_type,
+            miles: c.miles,
+            status: c.status as any,
+            activeState: c.active_state as any,
+            effectiveDate: c.effective_date,
+            expirationDate: c.expiration_date,
+            reviewDate: c.expiration_date,
+            fuelSurchargePercent: c.fuel_surcharge_percent,
+            fuelAmount: c.fuel_amount,
+            totalBilling: c.total_billing,
+            accessorials: [],
+            carrierTargetMatch: { targetAmount: c.base_rate, matchPercent: 100, nearestLane: '' },
+            rateHistory: [],
+            recommendedCarriers: []
+          })));
+        }
+      } catch (err) {
+        console.error("Error fetching data from Supabase:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
 
   // Modal States
   const [adjustItem, setAdjustItem] = useState<LaneException | MarketSummary | CustomerRateLane | null>(null);
@@ -84,7 +175,7 @@ export default function App() {
     handleExportCSV('carrier_targets_export.csv', exportData);
   };
 
-  const handleSaveAdjustment = ({
+  const handleSaveAdjustment = async ({
     id,
     target,
     changePercent,
@@ -97,7 +188,60 @@ export default function App() {
     notes: string;
     excludeKeyAccounts?: boolean;
   }) => {
+    
     let adjustedItemTitle = 'Lane Adjustment';
+
+    try {
+      const isException = laneExceptions.some(e => e.id === id);
+      if (isException) {
+        const exc = laneExceptions.find(e => e.id === id);
+        if (exc) {
+          if (!(exc.isKeyAccount && excludeKeyAccounts)) {
+             const newVar = Math.round(exc.avgActual - target);
+             const newVarPct = Math.round((newVar / target) * 1000) / 10;
+             await supabase.from('lane_exceptions').update({
+               current_target: target,
+               var_dollars: newVar,
+               var_percent: newVarPct,
+               adjustment_status: 'Adjusted',
+               last_adjusted_target: target,
+               adjusted_date: new Date().toISOString().split('T')[0],
+               adjusted_notes: notes
+             }).eq('id', id);
+          }
+        }
+      }
+
+      const matchingMarket = markets.find((m) => m.id === id);
+      if (matchingMarket) {
+         const newVar = Math.round(matchingMarket.avgActual - target);
+         const newVarPct = Math.round((newVar / target) * 1000) / 10;
+         await supabase.from('market_summaries').update({
+           avg_target: target,
+           variance_dollars: newVar,
+           variance_percent: newVarPct
+         }).eq('id', id);
+      }
+
+      const matchingLane = customerLanes.find(l => l.id === id);
+      if (matchingLane) {
+        await supabase.from('customer_rate_lanes').update({
+           base_rate: target,
+           total_billing: Math.round((target * (1 + matchingLane.fuelSurchargePercent / 100)) * 100) / 100
+        }).eq('id', id);
+      }
+      
+      await supabase.from('planned_adjustments').insert([{
+         title: `Lane Adjustment (${changePercent >= 0 ? '+' : ''}${changePercent}%)`,
+         change_percent: changePercent,
+         status: 'Active',
+         effective_date: new Date().toISOString().split('T')[0],
+         notes: notes || 'Target rate adjustment submitted by pricing analyst.'
+      }]);
+    } catch (err) {
+      console.error('Error saving adjustment to Supabase:', err);
+    }
+
 
     // Update lane exception if matching
     setLaneExceptions((prev) =>
@@ -217,7 +361,7 @@ export default function App() {
     setPlannedAdjustments((prev) => [adj, ...prev]);
   };
 
-  const handleCommitDataChanges = () => {
+  const handleCommitDataChanges = async () => {
     // Commit staged data updates into active rate lanes & control tower exceptions
     const newLane1: CustomerRateLane = {
       id: `lane-stg-${Date.now()}-1`,
@@ -310,6 +454,52 @@ export default function App() {
     };
 
     setCustomerLanes((prev) => [newLane1, newLane2, ...prev]);
+
+    try {
+      await supabase.from('customer_rate_lanes').insert([
+        {
+          lane_id: newLane1.laneId,
+          customer_name: newLane1.customerName,
+          origin_city: newLane1.originCity,
+          origin_state: newLane1.originState,
+          destination_city: newLane1.destinationCity,
+          destination_state: newLane1.destinationState,
+          base_rate: newLane1.baseRate,
+          equipment: newLane1.equipment,
+          service_type: newLane1.serviceType,
+          miles: newLane1.miles,
+          status: newLane1.status,
+          active_state: newLane1.activeState,
+          effective_date: newLane1.effectiveDate,
+          expiration_date: newLane1.expirationDate,
+          fuel_surcharge_percent: newLane1.fuelSurchargePercent,
+          fuel_amount: newLane1.fuelAmount,
+          total_billing: newLane1.totalBilling
+        },
+        {
+          lane_id: newLane2.laneId,
+          customer_name: newLane2.customerName,
+          origin_city: newLane2.originCity,
+          origin_state: newLane2.originState,
+          destination_city: newLane2.destinationCity,
+          destination_state: newLane2.destinationState,
+          base_rate: newLane2.baseRate,
+          equipment: newLane2.equipment,
+          service_type: newLane2.serviceType,
+          miles: newLane2.miles,
+          status: newLane2.status,
+          active_state: newLane2.activeState,
+          effective_date: newLane2.effectiveDate,
+          expiration_date: newLane2.expirationDate,
+          fuel_surcharge_percent: newLane2.fuelSurchargePercent,
+          fuel_amount: newLane2.fuelAmount,
+          total_billing: newLane2.totalBilling
+        }
+      ]);
+    } catch (err) {
+      console.error('Error committing changes to Supabase:', err);
+    }
+
 
     // Also add to lane exceptions in Control Tower
     const newExc1: LaneException = {
