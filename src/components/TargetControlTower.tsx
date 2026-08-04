@@ -9,6 +9,7 @@ import {
 } from '../types';
 import { USAMapSVG, CITY_COORDINATES, getAlbersProjection } from './USAMapSVG';
 import { ExportCarrierTargetsModal } from './modals/ExportCarrierTargetsModal';
+import { DashboardCharts } from './DashboardCharts';
 
 interface TargetControlTowerProps {
   kpis: KPIStats;
@@ -400,6 +401,8 @@ export const TargetControlTower: React.FC<TargetControlTowerProps> = ({
 
   return (
     <div className="space-y-6 animate-in fade-in duration-200 pb-12">
+<DashboardCharts markets={markets} />
+
       {/* Controls & Region Row */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex flex-wrap items-center gap-4">

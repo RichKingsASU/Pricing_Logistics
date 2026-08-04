@@ -28,6 +28,7 @@ import { MapManualModal } from './components/modals/MapManualModal';
 import { ScheduleAdjustmentModal } from './components/modals/ScheduleAdjustmentModal';
 import { SettingsModal } from './components/modals/SettingsModal';
 import { ReportsModal } from './components/modals/ReportsModal';
+import { Login } from './components/Login';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('target_control_tower');
@@ -44,6 +45,8 @@ export default function App() {
   const [datasets, setDatasets] = useState<DatasetItem[]>(initialDatasets);
   const [validationIssues, setValidationIssues] = useState<ValidationIssue[]>(initialValidationIssues);
   const [isLoading, setIsLoading] = useState(true);
+  const [session, setSession] = useState<any>(null);
+  const [authLoading, setAuthLoading] = useState(true);
 
   useEffect(() => {
     async function fetchData() {

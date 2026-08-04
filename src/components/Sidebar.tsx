@@ -133,10 +133,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </a>
         <a
           href="#logout"
-          onClick={(e) => {
+          onClick={async (e) => {
             e.preventDefault();
             if (confirm('Are you sure you want to log out of Forrest Logistics Pricing Hub?')) {
-              window.location.reload();
+              const { supabase } = await import('../lib/supabaseClient');
+              await supabase.auth.signOut();
             }
           }}
           className="flex items-center gap-3 px-4 py-2 rounded-lg text-[#D64545] hover:bg-[#ffdad6]/30 transition-all text-xs font-semibold"
