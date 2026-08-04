@@ -125,7 +125,7 @@ export function matchCarriersByOrigin(
         matchScore: Math.min(100, Math.max(10, score)),
         matchType,
         matchReason
-      };
+      } as CarrierMatchResult;
     })
     .filter((res): res is CarrierMatchResult => res !== null)
     .sort((a, b) => b.matchScore - a.matchScore);

@@ -4520,7 +4520,7 @@ export const DataManagement: React.FC<DataManagementProps> = ({
                             </td>
                             <td className="px-3 py-2.5 text-right font-bold tabular-nums">{m.carrier.truckCount}</td>
                             <td className="px-3 py-2.5 text-[#64748B] font-bold">{m.carrier.region}</td>
-                            <td className="px-3 py-2.5 text-[#475569] text-[11px]">{m.reason}</td>
+                            <td className="px-3 py-2.5 text-[#475569] text-[11px]">{m.matchReason}</td>
                             <td className="px-3 py-2.5 text-center">
                               <button
                                 type="button"
