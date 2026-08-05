@@ -12,7 +12,13 @@
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:e2e": "playwright test",
-    "test:db": "supabase test db"
+    "test:db": "supabase test db",
+    "db:start": "supabase start",
+    "db:stop": "supabase stop",
+    "db:reset": "supabase db reset",
+    "db:lint": "supabase db lint",
+    "db:types": "supabase gen types typescript --local > src/types/database.ts",
+    "db:push": "supabase db push"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",

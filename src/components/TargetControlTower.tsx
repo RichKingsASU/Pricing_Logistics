@@ -194,6 +194,9 @@ export const TargetControlTower: React.FC<TargetControlTowerProps> = ({
   };
 
   const activeMarket = markets.find((m) => m.id === selectedMarketId) || markets[0];
+  if (!activeMarket) {
+    return <div className="p-4 text-gray-500">No market data available.</div>;
+  }
 
   const activeMarketNameClean = activeMarket.name.replace(/( Market| Hub| Port| Terminal| City)/g, '');
 

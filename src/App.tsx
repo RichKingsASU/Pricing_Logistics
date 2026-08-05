@@ -16,6 +16,7 @@ import {
   initialValidationIssues
 } from './data/initialData';
 import { supabase } from './lib/supabaseClient';
+import { marketService, exceptionService, adjustmentService, rateLaneService } from './services/api';
 
 import { TopNavBar } from './components/TopNavBar';
 import { Sidebar } from './components/Sidebar';
@@ -52,9 +53,12 @@ export default function App() {
     async function fetchData() {
       setIsLoading(true);
       try {
-        const { data: mData } = await supabase.from('market_summaries').select('*');
-        if (mData) {
-          setMarkets(mData.map(m => ({
+        // We use a dummy org ID for now, as Auth is not fully wired up to select it
+        const orgId = '00000000-0000-0000-0000-000000000000'; // Or fetch it via authService
+
+        const mData = await supabase.from('market_summaries').select('*'); // Keep direct call or mock org until seed data is linked
+        if (mData.data) {
+          setMarkets(mData.data.map(m => ({
             id: m.id,
             name: m.name,
             region: m.region as Region,
@@ -69,9 +73,9 @@ export default function App() {
           })));
         }
 
-        const { data: leData } = await supabase.from('lane_exceptions').select('*');
-        if (leData) {
-          setLaneExceptions(leData.map(e => ({
+        const leData = await supabase.from('lane_exceptions').select('*');
+        if (leData.data) {
+          setLaneExceptions(leData.data.map(e => ({
             id: e.id,
             origin: e.origin,
             destination: e.destination,
@@ -90,9 +94,9 @@ export default function App() {
           })));
         }
 
-        const { data: paData } = await supabase.from('planned_adjustments').select('*');
-        if (paData) {
-          setPlannedAdjustments(paData.map(p => ({
+        const paData = await supabase.from('pricing_adjustments').select('*');
+        if (paData.data) {
+          setPlannedAdjustments(paData.data.map(p => ({
             id: p.id,
             title: p.title,
             changePercent: p.change_percent,
@@ -102,9 +106,9 @@ export default function App() {
           })));
         }
 
-        const { data: crData } = await supabase.from('customer_rate_lanes').select('*');
-        if (crData) {
-          setCustomerLanes(crData.map(c => ({
+        const crData = await supabase.from('customer_rate_lanes').select('*');
+        if (crData.data) {
+          setCustomerLanes(crData.data.map(c => ({
             id: c.id,
             laneId: c.lane_id,
             customerName: c.customer_name,
@@ -232,15 +236,15 @@ export default function App() {
            base_rate: target,
            total_billing: Math.round((target * (1 + matchingLane.fuelSurchargePercent / 100)) * 100) / 100
         }).eq('id', id);
-      }
-      
-      await supabase.from('planned_adjustments').insert([{
-         title: `Lane Adjustment (${changePercent >= 0 ? '+' : ''}${changePercent}%)`,
-         change_percent: changePercent,
-         status: 'Active',
-         effective_date: new Date().toISOString().split('T')[0],
-         notes: notes || 'Target rate adjustment submitted by pricing analyst.'
+      // Insert adjustment using new table name
+      await supabase.from('pricing_adjustments').insert([{
+        title: `Lane Adjustment (${changePercent >= 0 ? '+' : ''}${changePercent}%)`,
+        change_percent: changePercent,
+        status: 'Scheduled',
+        effective_date: new Date().toISOString(),
+        notes: `Adjusted based on target mapping to ${target}`
       }]);
+      }
     } catch (err) {
       console.error('Error saving adjustment to Supabase:', err);
     }

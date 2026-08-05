@@ -3,7 +3,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- Customer Rate Lanes
 CREATE TABLE IF NOT EXISTS public.customer_rate_lanes (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     lane_id TEXT NOT NULL,
     customer_name TEXT NOT NULL,
     origin_city TEXT NOT NULL,
@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS public.customer_rate_lanes (
 
 -- Market Summaries
 CREATE TABLE IF NOT EXISTS public.market_summaries (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT NOT NULL,
     region TEXT NOT NULL,
     avg_actual NUMERIC NOT NULL,
@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS public.market_summaries (
 
 -- Lane Exceptions
 CREATE TABLE IF NOT EXISTS public.lane_exceptions (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     origin TEXT NOT NULL,
     destination TEXT NOT NULL,
     market TEXT NOT NULL,
@@ -61,7 +61,7 @@ CREATE TABLE IF NOT EXISTS public.lane_exceptions (
 
 -- Planned Adjustments
 CREATE TABLE IF NOT EXISTS public.planned_adjustments (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     title TEXT NOT NULL,
     change_percent NUMERIC NOT NULL,
     status TEXT NOT NULL,
