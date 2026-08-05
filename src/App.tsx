@@ -16,7 +16,7 @@ import {
   initialValidationIssues
 } from './data/initialData';
 import { supabase } from './lib/supabaseClient';
-import { marketService, exceptionService, adjustmentService, rateLaneService } from './services/api';
+import { authService, marketService, exceptionService, adjustmentService, rateLaneService } from './services/api';
 
 import { TopNavBar } from './components/TopNavBar';
 import { Sidebar } from './components/Sidebar';
@@ -45,20 +45,39 @@ export default function App() {
   const [customerLanes, setCustomerLanes] = useState<CustomerRateLane[]>([]);
   const [datasets, setDatasets] = useState<DatasetItem[]>(initialDatasets);
   const [validationIssues, setValidationIssues] = useState<ValidationIssue[]>(initialValidationIssues);
+  
+  // Auth State
   const [isLoading, setIsLoading] = useState(true);
   const [session, setSession] = useState<any>(null);
   const [authLoading, setAuthLoading] = useState(true);
 
   useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setAuthLoading(false);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
     async function fetchData() {
+      if (!session) return;
       setIsLoading(true);
       try {
-        // We use a dummy org ID for now, as Auth is not fully wired up to select it
-        const orgId = '00000000-0000-0000-0000-000000000000'; // Or fetch it via authService
+        const orgId = await authService.getCurrentOrganizationId();
+        if (!orgId) return;
 
-        const mData = await supabase.from('market_summaries').select('*'); // Keep direct call or mock org until seed data is linked
-        if (mData.data) {
-          setMarkets(mData.data.map(m => ({
+        // Fetch markets
+        const mData = await marketService.getMarkets(orgId);
+        if (mData) {
+          setMarkets(mData.map(m => ({
             id: m.id,
             name: m.name,
             region: m.region as Region,
@@ -73,9 +92,9 @@ export default function App() {
           })));
         }
 
-        const leData = await supabase.from('lane_exceptions').select('*');
-        if (leData.data) {
-          setLaneExceptions(leData.data.map(e => ({
+        const leData = await exceptionService.getExceptions(orgId);
+        if (leData) {
+          setLaneExceptions(leData.map(e => ({
             id: e.id,
             origin: e.origin,
             destination: e.destination,
@@ -94,9 +113,9 @@ export default function App() {
           })));
         }
 
-        const paData = await supabase.from('pricing_adjustments').select('*');
-        if (paData.data) {
-          setPlannedAdjustments(paData.data.map(p => ({
+        const paData = await adjustmentService.getAdjustments(orgId);
+        if (paData) {
+          setPlannedAdjustments(paData.map(p => ({
             id: p.id,
             title: p.title,
             changePercent: p.change_percent,
@@ -106,9 +125,9 @@ export default function App() {
           })));
         }
 
-        const crData = await supabase.from('customer_rate_lanes').select('*');
-        if (crData.data) {
-          setCustomerLanes(crData.data.map(c => ({
+        const crData = await rateLaneService.getCustomerLanes(orgId);
+        if (crData) {
+          setCustomerLanes(crData.map(c => ({
             id: c.id,
             laneId: c.lane_id,
             customerName: c.customer_name,
@@ -142,8 +161,10 @@ export default function App() {
         setIsLoading(false);
       }
     }
-    fetchData();
-  }, []);
+    if (session) {
+      fetchData();
+    }
+  }, [session]);
 
   // Modal States
   const [adjustItem, setAdjustItem] = useState<LaneException | MarketSummary | CustomerRateLane | null>(null);
@@ -609,6 +630,18 @@ export default function App() {
   const handleAddLane = (newLane: CustomerRateLane) => {
     setCustomerLanes((prev) => [newLane, ...prev]);
   };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="text-slate-500 animate-pulse">Loading Pricing Control Tower...</div>
+      </div>
+    );
+  }
+
+  if (!session) {
+    return <Login />;
+  }
 
   return (
     <div className="min-h-screen bg-[#F4F7FA] font-['Inter',sans-serif] text-[#14213D] flex flex-col relative">

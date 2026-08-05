@@ -1,198 +1,125 @@
--- Seed Data Generated from initialData.ts
+-- supabase/seed.sql
 
--- Market Summaries
-INSERT INTO public.market_summaries (id, name, region, avg_actual, avg_target, variance_dollars, variance_percent, loads, trend_status, status) VALUES (
-    uuid_generate_v4(), 'Oakland Market', 'NW', 885, 825, 60, 7.2, 142, 'Increasing', 'Target Variance High'
-  );
-INSERT INTO public.market_summaries (id, name, region, avg_actual, avg_target, variance_dollars, variance_percent, loads, trend_status, status) VALUES (
-    uuid_generate_v4(), 'Seattle Market', 'NW', 720, 700, 20, 2.8, 128, 'Stabilizing', 'Balanced Market'
-  );
-INSERT INTO public.market_summaries (id, name, region, avg_actual, avg_target, variance_dollars, variance_percent, loads, trend_status, status) VALUES (
-    uuid_generate_v4(), 'Denver Market', 'NW', 2310, 2200, 110, 5, 98, 'Increasing', 'Target Variance High'
-  );
-INSERT INTO public.market_summaries (id, name, region, avg_actual, avg_target, variance_dollars, variance_percent, loads, trend_status, status) VALUES (
-    uuid_generate_v4(), 'Portland Market', 'NW', 1020, 1000, 20, 2, 110, 'Stabilizing', 'Balanced Market'
-  );
-INSERT INTO public.market_summaries (id, name, region, avg_actual, avg_target, variance_dollars, variance_percent, loads, trend_status, status) VALUES (
-    uuid_generate_v4(), 'Boise Hub', 'NW', 1720, 1650, 70, 4.2, 64, 'Increasing', 'Target Variance High'
-  );
-INSERT INTO public.market_summaries (id, name, region, avg_actual, avg_target, variance_dollars, variance_percent, loads, trend_status, status) VALUES (
-    uuid_generate_v4(), 'Salt Lake City', 'NW', 950, 900, 50, 5.5, 76, 'Stabilizing', 'Target Variance High'
-  );
-INSERT INTO public.market_summaries (id, name, region, avg_actual, avg_target, variance_dollars, variance_percent, loads, trend_status, status) VALUES (
-    uuid_generate_v4(), 'Reno Market', 'NW', 1280, 1200, 80, 6.6, 82, 'Increasing', 'Target Variance High'
-  );
-INSERT INTO public.market_summaries (id, name, region, avg_actual, avg_target, variance_dollars, variance_percent, loads, trend_status, status) VALUES (
-    uuid_generate_v4(), 'Los Angeles Market', 'SW', 890, 825, 65, 7.8, 385, 'Increasing', 'Tight Capacity'
-  );
-INSERT INTO public.market_summaries (id, name, region, avg_actual, avg_target, variance_dollars, variance_percent, loads, trend_status, status) VALUES (
-    uuid_generate_v4(), 'Phoenix Hub', 'SW', 1940, 1880, 60, 3.2, 112, 'Stabilizing', 'Target Variance High'
-  );
-INSERT INTO public.market_summaries (id, name, region, avg_actual, avg_target, variance_dollars, variance_percent, loads, trend_status, status) VALUES (
-    uuid_generate_v4(), 'Las Vegas Market', 'SW', 1720, 1650, 70, 4.2, 140, 'Stabilizing', 'Target Variance High'
-  );
-INSERT INTO public.market_summaries (id, name, region, avg_actual, avg_target, variance_dollars, variance_percent, loads, trend_status, status) VALUES (
-    uuid_generate_v4(), 'Chicago Market', 'NE', 1450, 1396, 54, 3.8, 210, 'Stabilizing', 'Target Variance High'
-  );
-INSERT INTO public.market_summaries (id, name, region, avg_actual, avg_target, variance_dollars, variance_percent, loads, trend_status, status) VALUES (
-    uuid_generate_v4(), 'New York Market', 'NE', 925, 845, 80, 9.4, 180, 'Increasing', 'Tight Capacity'
-  );
-INSERT INTO public.market_summaries (id, name, region, avg_actual, avg_target, variance_dollars, variance_percent, loads, trend_status, status) VALUES (
-    uuid_generate_v4(), 'Baltimore Port', 'NE', 825, 800, 25, 3.1, 125, 'Stabilizing', 'Balanced Market'
-  );
-INSERT INTO public.market_summaries (id, name, region, avg_actual, avg_target, variance_dollars, variance_percent, loads, trend_status, status) VALUES (
-    uuid_generate_v4(), 'Atlanta Market', 'SE', 1425, 1350, 75, 5.5, 275, 'Stabilizing', 'Balanced Market'
-  );
-INSERT INTO public.market_summaries (id, name, region, avg_actual, avg_target, variance_dollars, variance_percent, loads, trend_status, status) VALUES (
-    uuid_generate_v4(), 'Savannah Terminal', 'SE', 1425, 1350, 75, 5.5, 160, 'Increasing', 'Target Variance High'
-  );
-INSERT INTO public.market_summaries (id, name, region, avg_actual, avg_target, variance_dollars, variance_percent, loads, trend_status, status) VALUES (
-    uuid_generate_v4(), 'Memphis Terminal', 'SE', 625, 575, 50, 8.7, 190, 'Stabilizing', 'Balanced Market'
-  );
-INSERT INTO public.market_summaries (id, name, region, avg_actual, avg_target, variance_dollars, variance_percent, loads, trend_status, status) VALUES (
-    uuid_generate_v4(), 'Dallas Market', 'SE', 650, 595, 55, 9.2, 220, 'Stabilizing', 'Balanced Market'
-  );
-INSERT INTO public.market_summaries (id, name, region, avg_actual, avg_target, variance_dollars, variance_percent, loads, trend_status, status) VALUES (
-    uuid_generate_v4(), 'Houston Hub', 'SE', 1020, 980, 40, 4, 140, 'Increasing', 'Target Variance High'
-  );
+-- 1. Insert a mock user (will trigger on_auth_user_created)
+INSERT INTO auth.users (
+  id,
+  instance_id,
+  aud,
+  role,
+  email,
+  encrypted_password,
+  email_confirmed_at,
+  raw_app_meta_data,
+  raw_user_meta_data,
+  created_at,
+  updated_at
+) VALUES (
+  '00000000-0000-0000-0000-000000000000',
+  '00000000-0000-0000-0000-000000000000',
+  'authenticated',
+  'authenticated',
+  'admin@work4vince.com',
+  crypt('password123', gen_salt('bf')),
+  now(),
+  '{"provider":"email","providers":["email"]}',
+  '{}',
+  now(),
+  now()
+)
+ON CONFLICT (id) DO NOTHING;
 
--- Lane Exceptions
-INSERT INTO public.lane_exceptions (id, origin, destination, market, loads, current_target, avg_actual, var_dollars, var_percent, confidence, impact) VALUES (
-    uuid_generate_v4(), 'Oakland', 'Stockton', 'NW', 28, 545, 885, 340, 62.3, 'High', 'High'
-  );
-INSERT INTO public.lane_exceptions (id, origin, destination, market, loads, current_target, avg_actual, var_dollars, var_percent, confidence, impact) VALUES (
-    uuid_generate_v4(), 'Oakland', 'Reno', 'NW', 18, 1200, 1560, 360, 30, 'High', 'High'
-  );
-INSERT INTO public.lane_exceptions (id, origin, destination, market, loads, current_target, avg_actual, var_dollars, var_percent, confidence, impact) VALUES (
-    uuid_generate_v4(), 'Oakland', 'Sparks', 'NW', 14, 1200, 1560, 360, 30, 'High', 'High'
-  );
-INSERT INTO public.lane_exceptions (id, origin, destination, market, loads, current_target, avg_actual, var_dollars, var_percent, confidence, impact) VALUES (
-    uuid_generate_v4(), 'Oakland', 'Hollister', 'NW', 22, 670, 970, 300, 44.7, 'High', 'High'
-  );
-INSERT INTO public.lane_exceptions (id, origin, destination, market, loads, current_target, avg_actual, var_dollars, var_percent, confidence, impact) VALUES (
-    uuid_generate_v4(), 'Oakland', 'Sacramento', 'NW', 19, 600, 862, 262, 43.6, 'Medium', 'High'
-  );
-INSERT INTO public.lane_exceptions (id, origin, destination, market, loads, current_target, avg_actual, var_dollars, var_percent, confidence, impact) VALUES (
-    uuid_generate_v4(), 'Oakland', 'San Jose', 'NW', 11, 425, 725, 300, 70.5, 'High', 'Medium'
-  );
-INSERT INTO public.lane_exceptions (id, origin, destination, market, loads, current_target, avg_actual, var_dollars, var_percent, confidence, impact) VALUES (
-    uuid_generate_v4(), 'Oakland', 'Benicia', 'NW', 8, 380, 715, 335, 88.1, 'Medium', 'Medium'
-  );
-INSERT INTO public.lane_exceptions (id, origin, destination, market, loads, current_target, avg_actual, var_dollars, var_percent, confidence, impact) VALUES (
-    uuid_generate_v4(), 'Oakland', 'Sacramento', 'NW', 38, 950, 890, -60, -6.3, 'High', 'Low'
-  );
-INSERT INTO public.lane_exceptions (id, origin, destination, market, loads, current_target, avg_actual, var_dollars, var_percent, confidence, impact) VALUES (
-    uuid_generate_v4(), 'Oakland', 'Stockton', 'NW', 52, 620, 620, 0, 0, 'High', 'Low'
-  );
-INSERT INTO public.lane_exceptions (id, origin, destination, market, loads, current_target, avg_actual, var_dollars, var_percent, confidence, impact) VALUES (
-    uuid_generate_v4(), 'Seattle', 'Tacoma', 'NW', 28, 520, 510, -10, -1.9, 'High', 'Low'
-  );
-INSERT INTO public.lane_exceptions (id, origin, destination, market, loads, current_target, avg_actual, var_dollars, var_percent, confidence, impact) VALUES (
-    uuid_generate_v4(), 'Seattle', 'Olympia', 'NW', 45, 400, 700, 300, 75, 'High', 'High'
-  );
-INSERT INTO public.lane_exceptions (id, origin, destination, market, loads, current_target, avg_actual, var_dollars, var_percent, confidence, impact) VALUES (
-    uuid_generate_v4(), 'Tacoma', 'Brighton', 'NW', 12, 6900, 7400, 500, 7.2, 'High', 'High'
-  );
-INSERT INTO public.lane_exceptions (id, origin, destination, market, loads, current_target, avg_actual, var_dollars, var_percent, confidence, impact) VALUES (
-    uuid_generate_v4(), 'Seattle', 'Spokane', 'NW', 16, 1800, 1950, 150, 8.3, 'High', 'Medium'
-  );
-INSERT INTO public.lane_exceptions (id, origin, destination, market, loads, current_target, avg_actual, var_dollars, var_percent, confidence, impact) VALUES (
-    uuid_generate_v4(), 'Hubbard', 'Portland', 'NW', 9, 1000, 1400, 400, 40, 'Medium', 'High'
-  );
-INSERT INTO public.lane_exceptions (id, origin, destination, market, loads, current_target, avg_actual, var_dollars, var_percent, confidence, impact) VALUES (
-    uuid_generate_v4(), 'Denver', 'Boise', 'NW', 8, 1850, 2015, 165, 8.9, 'Low', 'High'
-  );
-INSERT INTO public.lane_exceptions (id, origin, destination, market, loads, current_target, avg_actual, var_dollars, var_percent, confidence, impact) VALUES (
-    uuid_generate_v4(), 'LA/LB', 'Shafter', 'SW', 64, 825, 1210, 385, 46.6, 'High', 'High'
-  );
-INSERT INTO public.lane_exceptions (id, origin, destination, market, loads, current_target, avg_actual, var_dollars, var_percent, confidence, impact) VALUES (
-    uuid_generate_v4(), 'LA/LB', 'Las Vegas', 'SW', 52, 1150, 1700, 550, 47.8, 'High', 'High'
-  );
-INSERT INTO public.lane_exceptions (id, origin, destination, market, loads, current_target, avg_actual, var_dollars, var_percent, confidence, impact) VALUES (
-    uuid_generate_v4(), 'LA/LB', 'Desert Hot Springs', 'SW', 38, 825, 1000, 175, 21.2, 'High', 'High'
-  );
-INSERT INTO public.lane_exceptions (id, origin, destination, market, loads, current_target, avg_actual, var_dollars, var_percent, confidence, impact) VALUES (
-    uuid_generate_v4(), 'LA/LB', 'Nogales', 'SW', 15, 2100, 3100, 1000, 47.6, 'High', 'High'
-  );
-INSERT INTO public.lane_exceptions (id, origin, destination, market, loads, current_target, avg_actual, var_dollars, var_percent, confidence, impact) VALUES (
-    uuid_generate_v4(), 'LA/LB', 'San Bernardino', 'SW', 42, 450, 825, 375, 83.3, 'High', 'High'
-  );
-INSERT INTO public.lane_exceptions (id, origin, destination, market, loads, current_target, avg_actual, var_dollars, var_percent, confidence, impact) VALUES (
-    uuid_generate_v4(), 'LA/LB', 'Perris', 'SW', 24, 475, 860, 385, 81, 'High', 'High'
-  );
-INSERT INTO public.lane_exceptions (id, origin, destination, market, loads, current_target, avg_actual, var_dollars, var_percent, confidence, impact) VALUES (
-    uuid_generate_v4(), 'LA/LB', 'Fontana', 'SW', 44, 650, 620, -30, -4.6, 'High', 'Low'
-  );
-INSERT INTO public.lane_exceptions (id, origin, destination, market, loads, current_target, avg_actual, var_dollars, var_percent, confidence, impact) VALUES (
-    uuid_generate_v4(), 'Chicago', 'Joliet', 'NE', 36, 580, 580, 0, 0, 'High', 'Low'
-  );
-INSERT INTO public.lane_exceptions (id, origin, destination, market, loads, current_target, avg_actual, var_dollars, var_percent, confidence, impact) VALUES (
-    uuid_generate_v4(), 'NY/NJ', 'Hopewell Junction', 'NE', 35, 845, 925, 80, 9.4, 'High', 'High'
-  );
-INSERT INTO public.lane_exceptions (id, origin, destination, market, loads, current_target, avg_actual, var_dollars, var_percent, confidence, impact) VALUES (
-    uuid_generate_v4(), 'Chicago', 'Battle Creek', 'NE', 22, 1396, 1496, 100, 7.1, 'High', 'High'
-  );
-INSERT INTO public.lane_exceptions (id, origin, destination, market, loads, current_target, avg_actual, var_dollars, var_percent, confidence, impact) VALUES (
-    uuid_generate_v4(), 'Baltimore', 'Hagerstown', 'NE', 18, 800, 825, 25, 3.1, 'Medium', 'Medium'
-  );
-INSERT INTO public.lane_exceptions (id, origin, destination, market, loads, current_target, avg_actual, var_dollars, var_percent, confidence, impact) VALUES (
-    uuid_generate_v4(), 'Savannah', 'Fairburn', 'SE', 48, 900, 1425, 525, 58.3, 'High', 'High'
-  );
-INSERT INTO public.lane_exceptions (id, origin, destination, market, loads, current_target, avg_actual, var_dollars, var_percent, confidence, impact) VALUES (
-    uuid_generate_v4(), 'Savannah', 'Charlotte', 'SE', 31, 1350, 1650, 300, 22.2, 'High', 'High'
-  );
-INSERT INTO public.lane_exceptions (id, origin, destination, market, loads, current_target, avg_actual, var_dollars, var_percent, confidence, impact) VALUES (
-    uuid_generate_v4(), 'Memphis', 'Memphis DC', 'SE', 29, 575, 625, 50, 8.7, 'High', 'High'
-  );
-INSERT INTO public.lane_exceptions (id, origin, destination, market, loads, current_target, avg_actual, var_dollars, var_percent, confidence, impact) VALUES (
-    uuid_generate_v4(), 'Dallas', 'McKinney', 'SE', 26, 325, 650, 325, 100, 'High', 'High'
-  );
+-- 2. Insert mock identities
+INSERT INTO auth.identities (
+  id,
+  user_id,
+  identity_data,
+  provider,
+  last_sign_in_at,
+  created_at,
+  updated_at
+) VALUES (
+  '00000000-0000-0000-0000-000000000000',
+  '00000000-0000-0000-0000-000000000000',
+  '{"sub":"00000000-0000-0000-0000-000000000000","email":"admin@work4vince.com"}',
+  'email',
+  now(),
+  now(),
+  now()
+)
+ON CONFLICT (id) DO NOTHING;
 
--- Planned Adjustments
-INSERT INTO public.planned_adjustments (id, title, change_percent, status, effective_date, notes) VALUES (
-    uuid_generate_v4(), 'Oakland Market Target Shift +2.5%', 2.5, 'Pending Approval', '7/5/2026', 'Seasonal import peak adjustment for Northern California drayage corridors.'
-  );
-INSERT INTO public.planned_adjustments (id, title, change_percent, status, effective_date, notes) VALUES (
-    uuid_generate_v4(), 'LA/LB → Las Vegas Target Adjustment -1.5%', -1.5, 'Active', '7/1/2026', 'Contract benchmark alignment for Amazon LAS1 volume.'
-  );
-INSERT INTO public.planned_adjustments (id, title, change_percent, status, effective_date, notes) VALUES (
-    uuid_generate_v4(), 'Seattle Port Local Drayage +1.8%', 1.8, 'Scheduled', '7/12/2026', 'NW region fuel and terminal congestion surcharge re-index.'
-  );
+-- 3. Populate data using DO block to grab the org ID created by the trigger
+DO $$
+DECLARE
+    v_org_id UUID;
+    v_customer_id UUID;
+    v_lane_nw UUID;
+    v_lane_ne UUID;
+    v_lane_tx UUID;
+    v_lane_mw UUID;
+    v_lane_se UUID;
+BEGIN
+    -- Get the org ID created by the trigger for our mock user
+    SELECT organization_id INTO v_org_id
+    FROM public.memberships
+    WHERE user_id = '00000000-0000-0000-0000-000000000000'
+    LIMIT 1;
 
--- Customer Rate Lanes
-INSERT INTO public.customer_rate_lanes (id, lane_id, customer_name, origin_city, origin_state, destination_city, destination_state, base_rate, equipment, service_type, miles, status, active_state, effective_date, expiration_date, fuel_surcharge_percent, fuel_amount, total_billing) VALUES (
-    uuid_generate_v4(), 'AMZ-LAS-001', 'Amazon Logistics, Inc.', 'LA/LB', 'CA', 'Henderson', 'NV', 1150, '40'' HC Container', 'Import Dray', 278, 'AWARDED', 'Active', '2026-07-01', '2027-06-30', 15.5, 178.25, 1328.25
-  );
-INSERT INTO public.customer_rate_lanes (id, lane_id, customer_name, origin_city, origin_state, destination_city, destination_state, base_rate, equipment, service_type, miles, status, active_state, effective_date, expiration_date, fuel_surcharge_percent, fuel_amount, total_billing) VALUES (
-    uuid_generate_v4(), 'AMZ-PSP-002', 'Amazon Logistics, Inc.', 'LA/LB', 'CA', 'Desert Hot Springs', 'CA', 825, '40'' HC Container', 'Import Dray', 121, 'AWARDED', 'Active', '2026-07-01', '2027-06-30', 15.5, 127.88, 952.88
-  );
-INSERT INTO public.customer_rate_lanes (id, lane_id, customer_name, origin_city, origin_state, destination_city, destination_state, base_rate, equipment, service_type, miles, status, active_state, effective_date, expiration_date, fuel_surcharge_percent, fuel_amount, total_billing) VALUES (
-    uuid_generate_v4(), 'AMZ-OAK-003', 'Amazon Logistics, Inc.', 'Oakland', 'CA', 'Stockton', 'CA', 545, '40'' HC Container', 'Import Dray', 84, 'AWARDED', 'Active', '2026-07-01', '2027-06-30', 14.5, 79.03, 624.03
-  );
-INSERT INTO public.customer_rate_lanes (id, lane_id, customer_name, origin_city, origin_state, destination_city, destination_state, base_rate, equipment, service_type, miles, status, active_state, effective_date, expiration_date, fuel_surcharge_percent, fuel_amount, total_billing) VALUES (
-    uuid_generate_v4(), 'AMZ-CLT-004', 'Amazon Logistics, Inc.', 'Savannah', 'GA', 'Charlotte', 'NC', 1350, '40'' HC Container', 'Import Dray', 256, 'AWARDED', 'Active', '2026-07-01', '2027-06-30', 16, 216, 1566
-  );
-INSERT INTO public.customer_rate_lanes (id, lane_id, customer_name, origin_city, origin_state, destination_city, destination_state, base_rate, equipment, service_type, miles, status, active_state, effective_date, expiration_date, fuel_surcharge_percent, fuel_amount, total_billing) VALUES (
-    uuid_generate_v4(), 'ROSS-SHAF-101', 'Ross Stores, Inc.', 'LA/LB', 'CA', 'Shafter', 'CA', 825, '40'' HC Container', 'Import Dray', 148, 'AWARDED', 'Active', '2026-07-01', '2027-06-30', 15, 123.75, 948.75
-  );
-INSERT INTO public.customer_rate_lanes (id, lane_id, customer_name, origin_city, origin_state, destination_city, destination_state, base_rate, equipment, service_type, miles, status, active_state, effective_date, expiration_date, fuel_surcharge_percent, fuel_amount, total_billing) VALUES (
-    uuid_generate_v4(), 'ROSS-RHDC-102', 'Ross Stores, Inc.', 'North Charleston', 'SC', 'Rock Hill', 'SC', 750, '40'' HC Container', 'Import Dray', 171, 'AWARDED', 'Active', '2026-07-01', '2027-06-30', 15, 112.5, 862.5
-  );
-INSERT INTO public.customer_rate_lanes (id, lane_id, customer_name, origin_city, origin_state, destination_city, destination_state, base_rate, equipment, service_type, miles, status, active_state, effective_date, expiration_date, fuel_surcharge_percent, fuel_amount, total_billing) VALUES (
-    uuid_generate_v4(), 'DT-CARSON-201', 'Dollar Tree Distribution Inc', 'LA/LB', 'CA', 'Carson', 'CA', 250, '40'' HC Container', 'Import Dray', 9, 'AWARDED', 'Active', '2026-07-01', '2027-06-30', 12, 30, 280
-  );
-INSERT INTO public.customer_rate_lanes (id, lane_id, customer_name, origin_city, origin_state, destination_city, destination_state, base_rate, equipment, service_type, miles, status, active_state, effective_date, expiration_date, fuel_surcharge_percent, fuel_amount, total_billing) VALUES (
-    uuid_generate_v4(), 'DT-SBD-202', 'Dollar Tree Distribution Inc', 'LA/LB', 'CA', 'San Bernardino', 'CA', 450, '40'' HC Container', 'Import Dray', 78, 'AWARDED', 'Active', '2026-07-01', '2027-06-30', 15, 67.5, 517.5
-  );
-INSERT INTO public.customer_rate_lanes (id, lane_id, customer_name, origin_city, origin_state, destination_city, destination_state, base_rate, equipment, service_type, miles, status, active_state, effective_date, expiration_date, fuel_surcharge_percent, fuel_amount, total_billing) VALUES (
-    uuid_generate_v4(), 'DISC-FAIR-301', 'Discount Tire', 'Savannah', 'GA', 'Fairburn', 'GA', 900, '40'' HC Container', 'Import Dray', 255, 'AWARDED', 'Active', '2026-07-01', '2027-06-30', 15.5, 139.5, 1039.5
-  );
-INSERT INTO public.customer_rate_lanes (id, lane_id, customer_name, origin_city, origin_state, destination_city, destination_state, base_rate, equipment, service_type, miles, status, active_state, effective_date, expiration_date, fuel_surcharge_percent, fuel_amount, total_billing) VALUES (
-    uuid_generate_v4(), 'WM-DAL-401', 'Walmart Distribution', 'Dallas', 'TX', 'Houston', 'TX', 820, '53'' Dry Van', 'Regional Haul', 242, 'AWARDED', 'Active', '2026-07-01', '2027-06-30', 16, 131.2, 951.2
-  );
-INSERT INTO public.customer_rate_lanes (id, lane_id, customer_name, origin_city, origin_state, destination_city, destination_state, base_rate, equipment, service_type, miles, status, active_state, effective_date, expiration_date, fuel_surcharge_percent, fuel_amount, total_billing) VALUES (
-    uuid_generate_v4(), 'FDX-MEM-501', 'FedEx Ground', 'Memphis', 'TN', 'Nashville', 'TN', 720, '53'' Dry Van', 'Linehaul', 212, 'AWARDED', 'Active', '2026-07-01', '2027-06-30', 15, 108, 828
-  );
-INSERT INTO public.customer_rate_lanes (id, lane_id, customer_name, origin_city, origin_state, destination_city, destination_state, base_rate, equipment, service_type, miles, status, active_state, effective_date, expiration_date, fuel_surcharge_percent, fuel_amount, total_billing) VALUES (
-    uuid_generate_v4(), 'HD-PERRIS-601', 'Home Depot Ops', 'LA/LB', 'CA', 'Perris', 'CA', 475, '40'' HC Container', 'Import Dray', 75, 'AWARDED', 'Active', '2026-07-01', '2027-06-30', 15, 71.25, 546.25
-  );
+    -- Update org name to something nice
+    UPDATE public.organizations
+    SET name = 'Work4Vince Demo Org'
+    WHERE id = v_org_id;
+
+    -- 4. Insert Markets
+    INSERT INTO public.market_summaries (organization_id, name, region, avg_actual, avg_target, variance_dollars, variance_percent, loads, trend_status, status)
+    VALUES 
+        (v_org_id, 'Seattle / Tacoma Market', 'NW', 1450, 1500, -50, -3.3, 142, 'Improving', 'Balanced Market'),
+        (v_org_id, 'New York / New Jersey Port', 'NE', 1680, 1600, 80, 5.0, 315, 'Declining', 'Tight Capacity'),
+        (v_org_id, 'Houston Terminal', 'TX', 1250, 1300, -50, -3.8, 204, 'Stable', 'Balanced Market'),
+        (v_org_id, 'Chicago Hub', 'MW', 1420, 1380, 40, 2.9, 189, 'Volatile', 'Tight Capacity'),
+        (v_org_id, 'Atlanta City', 'SE', 1310, 1310, 0, 0, 156, 'Stable', 'Balanced Market');
+
+    -- 5. Insert Customer
+    INSERT INTO public.customers (organization_id, name, display_name)
+    VALUES (v_org_id, 'Demo Customer LLC', 'Demo Customer LLC')
+    RETURNING id INTO v_customer_id;
+
+    -- 6. Insert Lanes
+    INSERT INTO public.lanes (organization_id, normalized_lane_key, origin_location_id, destination_location_id, region, approximate_miles)
+    VALUES 
+        (v_org_id, 'seattle-wa-portland-or', 'Seattle, WA', 'Portland, OR', 'NW', 174),
+        (v_org_id, 'newark-nj-philadelphia-pa', 'Newark, NJ', 'Philadelphia, PA', 'NE', 85),
+        (v_org_id, 'houston-tx-dallas-tx', 'Houston, TX', 'Dallas, TX', 'TX', 239),
+        (v_org_id, 'chicago-il-indianapolis-in', 'Chicago, IL', 'Indianapolis, IN', 'MW', 180),
+        (v_org_id, 'atlanta-ga-charlotte-nc', 'Atlanta, GA', 'Charlotte, NC', 'SE', 244);
+
+    -- Grab lane IDs
+    SELECT id INTO v_lane_nw FROM public.lanes WHERE normalized_lane_key = 'seattle-wa-portland-or' AND organization_id = v_org_id;
+    SELECT id INTO v_lane_ne FROM public.lanes WHERE normalized_lane_key = 'newark-nj-philadelphia-pa' AND organization_id = v_org_id;
+    SELECT id INTO v_lane_tx FROM public.lanes WHERE normalized_lane_key = 'houston-tx-dallas-tx' AND organization_id = v_org_id;
+    SELECT id INTO v_lane_mw FROM public.lanes WHERE normalized_lane_key = 'chicago-il-indianapolis-in' AND organization_id = v_org_id;
+    SELECT id INTO v_lane_se FROM public.lanes WHERE normalized_lane_key = 'atlanta-ga-charlotte-nc' AND organization_id = v_org_id;
+
+    -- 7. Insert Customer Rate Lanes
+    INSERT INTO public.customer_rate_lanes (
+        organization_id, customer_id, lane_id, customer_name, origin_city, origin_state, destination_city, destination_state, base_rate, equipment, service_type, miles, status, active_state, effective_date, expiration_date, fuel_surcharge_percent, fuel_amount, total_billing
+    ) VALUES 
+        (v_org_id, v_customer_id, v_lane_nw, 'Demo Customer LLC', 'Seattle', 'WA', 'Portland', 'OR', 1250.00, 'Dry Van', 'Standard', 174, 'Active', 'Active', '2026-01-01', '2026-12-31', 12.5, 156.25, 1406.25),
+        (v_org_id, v_customer_id, v_lane_ne, 'Demo Customer LLC', 'Newark', 'NJ', 'Philadelphia', 'PA', 950.00, 'Reefer', 'Expedited', 85, 'Active', 'Active', '2026-01-01', '2026-12-31', 15.0, 142.50, 1092.50),
+        (v_org_id, v_customer_id, v_lane_tx, 'Demo Customer LLC', 'Houston', 'TX', 'Dallas', 'TX', 1100.00, 'Flatbed', 'Standard', 239, 'Active', 'Active', '2026-01-01', '2026-12-31', 10.0, 110.00, 1210.00);
+
+    -- 8. Insert Lane Exceptions
+    INSERT INTO public.lane_exceptions (
+        organization_id, lane_id, origin, destination, market, loads, current_target, avg_actual, var_dollars, var_percent, confidence, impact, adjustment_status
+    ) VALUES 
+        (v_org_id, v_lane_nw, 'Seattle, WA', 'Portland, OR', 'NW', 42, 1200, 1350, 150, 12.5, 'High', 'Critical', 'Needs Review'),
+        (v_org_id, v_lane_ne, 'Newark, NJ', 'Philadelphia, PA', 'NE', 89, 900, 1000, 100, 11.1, 'Medium', 'High', 'Pending Approval');
+
+    -- 9. Insert Pricing Adjustments
+    INSERT INTO public.pricing_adjustments (
+        organization_id, title, change_percent, status, effective_date, notes
+    ) VALUES 
+        (v_org_id, 'Q3 Nationwide Fuel Adjustment', 2.5, 'Scheduled', '2026-10-01', 'Standard quarterly adjustment based on DOE averages.'),
+        (v_org_id, 'NE Regional Capacity Surcharge', 5.0, 'Active', '2026-08-01', 'Temporary surcharge due to port congestion in NJ/NY.');
+
+END $$;
