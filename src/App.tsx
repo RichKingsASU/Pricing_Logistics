@@ -16,6 +16,7 @@ import {
   initialValidationIssues
 } from './data/initialData';
 import { supabase } from './lib/supabaseClient';
+import { authService, marketService, exceptionService, adjustmentService, rateLaneService } from './services/api';
 
 import { TopNavBar } from './components/TopNavBar';
 import { Sidebar } from './components/Sidebar';
@@ -44,15 +45,37 @@ export default function App() {
   const [customerLanes, setCustomerLanes] = useState<CustomerRateLane[]>([]);
   const [datasets, setDatasets] = useState<DatasetItem[]>(initialDatasets);
   const [validationIssues, setValidationIssues] = useState<ValidationIssue[]>(initialValidationIssues);
+  
+  // Auth State
   const [isLoading, setIsLoading] = useState(true);
   const [session, setSession] = useState<any>(null);
   const [authLoading, setAuthLoading] = useState(true);
 
   useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setAuthLoading(false);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
     async function fetchData() {
+      if (!session) return;
       setIsLoading(true);
       try {
-        const { data: mData } = await supabase.from('market_summaries').select('*');
+        const orgId = await authService.getCurrentOrganizationId();
+        if (!orgId) return;
+
+        // Fetch markets
+        const mData = await marketService.getMarkets(orgId);
         if (mData) {
           setMarkets(mData.map(m => ({
             id: m.id,
@@ -69,7 +92,7 @@ export default function App() {
           })));
         }
 
-        const { data: leData } = await supabase.from('lane_exceptions').select('*');
+        const leData = await exceptionService.getExceptions(orgId);
         if (leData) {
           setLaneExceptions(leData.map(e => ({
             id: e.id,
@@ -90,7 +113,7 @@ export default function App() {
           })));
         }
 
-        const { data: paData } = await supabase.from('planned_adjustments').select('*');
+        const paData = await adjustmentService.getAdjustments(orgId);
         if (paData) {
           setPlannedAdjustments(paData.map(p => ({
             id: p.id,
@@ -102,7 +125,7 @@ export default function App() {
           })));
         }
 
-        const { data: crData } = await supabase.from('customer_rate_lanes').select('*');
+        const crData = await rateLaneService.getCustomerLanes(orgId);
         if (crData) {
           setCustomerLanes(crData.map(c => ({
             id: c.id,
@@ -138,8 +161,10 @@ export default function App() {
         setIsLoading(false);
       }
     }
-    fetchData();
-  }, []);
+    if (session) {
+      fetchData();
+    }
+  }, [session]);
 
   // Modal States
   const [adjustItem, setAdjustItem] = useState<LaneException | MarketSummary | CustomerRateLane | null>(null);
@@ -232,15 +257,15 @@ export default function App() {
            base_rate: target,
            total_billing: Math.round((target * (1 + matchingLane.fuelSurchargePercent / 100)) * 100) / 100
         }).eq('id', id);
-      }
-      
-      await supabase.from('planned_adjustments').insert([{
-         title: `Lane Adjustment (${changePercent >= 0 ? '+' : ''}${changePercent}%)`,
-         change_percent: changePercent,
-         status: 'Active',
-         effective_date: new Date().toISOString().split('T')[0],
-         notes: notes || 'Target rate adjustment submitted by pricing analyst.'
+      // Insert adjustment using new table name
+      await supabase.from('pricing_adjustments').insert([{
+        title: `Lane Adjustment (${changePercent >= 0 ? '+' : ''}${changePercent}%)`,
+        change_percent: changePercent,
+        status: 'Scheduled',
+        effective_date: new Date().toISOString(),
+        notes: `Adjusted based on target mapping to ${target}`
       }]);
+      }
     } catch (err) {
       console.error('Error saving adjustment to Supabase:', err);
     }
@@ -605,6 +630,18 @@ export default function App() {
   const handleAddLane = (newLane: CustomerRateLane) => {
     setCustomerLanes((prev) => [newLane, ...prev]);
   };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="text-slate-500 animate-pulse">Loading Pricing Control Tower...</div>
+      </div>
+    );
+  }
+
+  if (!session) {
+    return <Login />;
+  }
 
   return (
     <div className="min-h-screen bg-[#F4F7FA] font-['Inter',sans-serif] text-[#14213D] flex flex-col relative">
