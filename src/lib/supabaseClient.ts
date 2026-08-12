@@ -2,11 +2,11 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '../types/database';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabaseUrl = typeof import.meta !== 'undefined' && import.meta.env ? import.meta.env.VITE_SUPABASE_URL : undefined;
+const supabaseAnonKey = typeof import.meta !== 'undefined' && import.meta.env ? import.meta.env.VITE_SUPABASE_ANON_KEY : undefined;
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn('Missing Supabase Environment Variables. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your .env file.');
+  // Safe warning in development/standalone mode
 }
 
 // Create a single supabase client for interacting with your database

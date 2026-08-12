@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { ActiveTab } from '../types';
+import React, { useState, useRef, useEffect } from 'react';
+import { ActiveTab, DevPersona } from '../types';
 
 interface TopNavBarProps {
   activeTab: ActiveTab;
@@ -11,6 +11,9 @@ interface TopNavBarProps {
   onOpenSettings: () => void;
   onOpenReportIssue?: () => void;
   reportedCount?: number;
+  currentUser?: DevPersona | null;
+  onSignOut?: () => void;
+  onSwitchPersona?: () => void;
 }
 
 export const TopNavBar: React.FC<TopNavBarProps> = ({
@@ -22,9 +25,24 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
   setTeamContext,
   onOpenSettings,
   onOpenReportIssue,
-  reportedCount = 0
+  reportedCount = 0,
+  currentUser,
+  onSignOut,
+  onSwitchPersona
 }) => {
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setShowUserMenu(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const notifications = [
     ...(reportedCount > 0
@@ -34,6 +52,12 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
     { id: 'n2', title: 'New load data imported for Week 27', time: '1 hour ago', unread: true },
     { id: 'n3', title: 'Rate adjustment for Chicago -> Atlanta approved', time: '3 hours ago', unread: false }
   ];
+
+  const initials = currentUser?.avatarInitials || 'JD';
+  const displayName = currentUser?.name || 'Jane Doe';
+  const displayRole = currentUser?.role || (teamContext === 'Operations' ? 'Operations Dispatcher' : 'Senior Pricing Analyst');
+  const displayEmail = currentUser?.email || 'j.doe@forrestlogistics.com';
+  const avatarBg = currentUser?.avatarColor || '#1769FF';
 
   return (
     <header className="bg-[#0B1930] text-white sticky top-0 z-50 border-b border-[#D8E1EB]">
@@ -202,14 +226,97 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
             <span className="material-symbols-outlined text-[20px]">settings</span>
           </button>
 
-          {/* User Avatar */}
-          <div className="flex items-center gap-2 pl-1 cursor-pointer">
-            <div className="w-8 h-8 rounded-full bg-[#4F83B8] flex items-center justify-center text-xs font-bold border border-white/20 text-white shadow-sm">
-              JD
-            </div>
+          {/* User Avatar & Interactive Profile / Bypass Menu */}
+          <div className="relative" ref={userMenuRef}>
+            <button
+              onClick={() => setShowUserMenu(!showUserMenu)}
+              className="flex items-center gap-2 pl-1 rounded-full focus:outline-none focus:ring-2 focus:ring-[#1769FF] transition-transform active:scale-95"
+              title="User Profile & Development Settings"
+            >
+              <div 
+                className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border border-white/20 text-white shadow-sm"
+                style={{ backgroundColor: avatarBg }}
+              >
+                {initials}
+              </div>
+            </button>
+
+            {showUserMenu && (
+              <div className="absolute right-0 mt-2 w-72 bg-white text-[#14213D] rounded-2xl shadow-2xl border border-[#D8E1EB] py-3 z-50 animate-in fade-in slide-in-from-top-2 duration-150 divide-y divide-[#D8E1EB]">
+                {/* User Info Header */}
+                <div className="px-4 pb-3">
+                  <div className="flex items-center gap-3">
+                    <div 
+                      className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white shadow-sm"
+                      style={{ backgroundColor: avatarBg }}
+                    >
+                      {initials}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-bold text-xs text-[#0B1930] truncate">{displayName}</div>
+                      <div className="text-[11px] text-[#64748B] truncate">{displayRole}</div>
+                      <div className="text-[10px] text-[#94A3B8] truncate">{displayEmail}</div>
+                    </div>
+                  </div>
+                  <div className="mt-2.5 flex items-center gap-1.5">
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#EAF2FF] text-[#1769FF]">
+                      {teamContext}
+                    </span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#ECFDF5] text-[#059669] flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#10B981]"></span>
+                      Dev Bypass Active
+                    </span>
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="py-2 px-2 space-y-1 text-xs">
+                  {onSwitchPersona && (
+                    <button
+                      onClick={() => {
+                        setShowUserMenu(false);
+                        onSwitchPersona();
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-left font-semibold text-[#0B1930] hover:bg-[#F4F7FA] rounded-lg transition-colors"
+                    >
+                      <span className="material-symbols-outlined text-[18px] text-[#1769FF]">bolt</span>
+                      <span>Switch Dev Persona / Screen</span>
+                    </button>
+                  )}
+
+                  <button
+                    onClick={() => {
+                      setShowUserMenu(false);
+                      onOpenSettings();
+                    }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 text-left font-semibold text-[#0B1930] hover:bg-[#F4F7FA] rounded-lg transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-[18px] text-[#64748B]">tune</span>
+                    <span>System Settings</span>
+                  </button>
+                </div>
+
+                {/* Sign Out / Exit Session */}
+                <div className="pt-2 px-2">
+                  <button
+                    onClick={() => {
+                      setShowUserMenu(false);
+                      if (onSignOut) {
+                        onSignOut();
+                      }
+                    }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 text-left font-semibold text-[#DC2626] hover:bg-[#FEF2F2] rounded-lg transition-colors text-xs"
+                  >
+                    <span className="material-symbols-outlined text-[18px] text-[#DC2626]">logout</span>
+                    <span>Sign Out & Return to Login</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
     </header>
   );
 };
+

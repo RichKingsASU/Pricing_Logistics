@@ -8,16 +8,22 @@ import {
   PlannedAdjustment,
   CustomerRateLane,
   DatasetItem,
-  ValidationIssue
+  ValidationIssue,
+  DevPersona
 } from './types';
 import {
   initialKPIStats,
+  initialMarkets,
+  initialLaneExceptions,
+  initialPlannedAdjustments,
+  initialCustomerLanes,
   initialDatasets,
   initialValidationIssues
 } from './data/initialData';
 import { supabase } from './lib/supabaseClient';
 import { authService, marketService, exceptionService, adjustmentService, rateLaneService } from './services/api';
 
+import { Login, DEFAULT_DEV_PERSONAS } from './components/Login';
 import { TopNavBar } from './components/TopNavBar';
 import { Sidebar } from './components/Sidebar';
 import { TargetControlTower } from './components/TargetControlTower';
@@ -29,46 +35,77 @@ import { MapManualModal } from './components/modals/MapManualModal';
 import { ScheduleAdjustmentModal } from './components/modals/ScheduleAdjustmentModal';
 import { SettingsModal } from './components/modals/SettingsModal';
 import { ReportsModal } from './components/modals/ReportsModal';
-import { Login } from './components/Login';
 
 export default function App() {
+  // Auth & Dev Bypass State
+  const [currentUser, setCurrentUser] = useState<DevPersona | null>(() => {
+    try {
+      const saved = sessionStorage.getItem('pricing_hub_dev_bypass_persona');
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    } catch (e) {
+      // Ignore session storage errors
+    }
+    return null;
+  });
+  const [session, setSession] = useState<any>(null);
+
   const [activeTab, setActiveTab] = useState<ActiveTab>('target_control_tower');
   const [selectedRegion, setSelectedRegion] = useState<Region>('NW');
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [teamContext, setTeamContext] = useState<'Pricing Team' | 'Operations'>('Pricing Team');
+  const [teamContext, setTeamContext] = useState<'Pricing Team' | 'Operations'>(() => {
+    try {
+      const saved = sessionStorage.getItem('pricing_hub_dev_bypass_persona');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.teamContext) return parsed.teamContext;
+      }
+    } catch (e) {}
+    return 'Pricing Team';
+  });
 
   // Application Data States
-  const [kpis] = useState<KPIStats>(initialKPIStats); // Keep KPIs static for now
-  const [markets, setMarkets] = useState<MarketSummary[]>([]);
-  const [laneExceptions, setLaneExceptions] = useState<LaneException[]>([]);
-  const [plannedAdjustments, setPlannedAdjustments] = useState<PlannedAdjustment[]>([]);
-  const [customerLanes, setCustomerLanes] = useState<CustomerRateLane[]>([]);
+  const [kpis] = useState<KPIStats>(initialKPIStats);
+  const [markets, setMarkets] = useState<MarketSummary[]>(initialMarkets);
+  const [laneExceptions, setLaneExceptions] = useState<LaneException[]>(initialLaneExceptions);
+  const [plannedAdjustments, setPlannedAdjustments] = useState<PlannedAdjustment[]>(initialPlannedAdjustments);
+  const [customerLanes, setCustomerLanes] = useState<CustomerRateLane[]>(initialCustomerLanes);
   const [datasets, setDatasets] = useState<DatasetItem[]>(initialDatasets);
   const [validationIssues, setValidationIssues] = useState<ValidationIssue[]>(initialValidationIssues);
   
-  // Auth State
-  const [isLoading, setIsLoading] = useState(true);
-  const [session, setSession] = useState<any>(null);
-  const [authLoading, setAuthLoading] = useState(true);
+  // Loading State
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setAuthLoading(false);
-    });
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-    });
-
-    return () => subscription.unsubscribe();
+    async function initAuth() {
+      try {
+        const { data: { session: existingSession } } = await supabase.auth.getSession();
+        if (existingSession) {
+          setSession(existingSession);
+          if (!currentUser) {
+            const email = existingSession.user?.email || 'authenticated@forrestlogistics.com';
+            setCurrentUser({
+              id: existingSession.user?.id || 'supabase-user',
+              name: email.split('@')[0],
+              email,
+              role: 'Pricing Specialist',
+              teamContext: 'Pricing Team',
+              avatarInitials: email.substring(0, 2).toUpperCase(),
+              avatarColor: '#1769FF',
+              description: 'Authenticated Supabase User'
+            });
+          }
+        }
+      } catch (err) {
+        console.info('Supabase session check in standalone mode');
+      }
+    }
+    initAuth();
   }, []);
 
   useEffect(() => {
     async function fetchData() {
-      if (!session) return;
       setIsLoading(true);
       try {
         const orgId = await authService.getCurrentOrganizationId();
@@ -76,7 +113,7 @@ export default function App() {
 
         // Fetch markets
         const mData = await marketService.getMarkets(orgId);
-        if (mData) {
+        if (mData && mData.length > 0) {
           setMarkets(mData.map(m => ({
             id: m.id,
             name: m.name,
@@ -93,7 +130,7 @@ export default function App() {
         }
 
         const leData = await exceptionService.getExceptions(orgId);
-        if (leData) {
+        if (leData && leData.length > 0) {
           setLaneExceptions(leData.map(e => ({
             id: e.id,
             origin: e.origin,
@@ -114,7 +151,7 @@ export default function App() {
         }
 
         const paData = await adjustmentService.getAdjustments(orgId);
-        if (paData) {
+        if (paData && paData.length > 0) {
           setPlannedAdjustments(paData.map(p => ({
             id: p.id,
             title: p.title,
@@ -126,7 +163,7 @@ export default function App() {
         }
 
         const crData = await rateLaneService.getCustomerLanes(orgId);
-        if (crData) {
+        if (crData && crData.length > 0) {
           setCustomerLanes(crData.map(c => ({
             id: c.id,
             laneId: c.lane_id,
@@ -156,15 +193,13 @@ export default function App() {
           })));
         }
       } catch (err) {
-        console.error("Error fetching data from Supabase:", err);
+        console.info("Running in standalone demo mode with default dataset.");
       } finally {
         setIsLoading(false);
       }
     }
-    if (session) {
-      fetchData();
-    }
-  }, [session]);
+    fetchData();
+  }, []);
 
   // Modal States
   const [adjustItem, setAdjustItem] = useState<LaneException | MarketSummary | CustomerRateLane | null>(null);
@@ -631,16 +666,58 @@ export default function App() {
     setCustomerLanes((prev) => [newLane, ...prev]);
   };
 
-  if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="text-slate-500 animate-pulse">Loading Pricing Control Tower...</div>
-      </div>
-    );
-  }
+  const handleBypass = (persona: DevPersona, initialTab?: ActiveTab) => {
+    setCurrentUser(persona);
+    setTeamContext(persona.teamContext);
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+    try {
+      sessionStorage.setItem('pricing_hub_dev_bypass_persona', JSON.stringify(persona));
+    } catch (e) {}
+  };
 
-  if (!session) {
-    return <Login />;
+  const handleLoginSuccess = (email?: string) => {
+    const userEmail = email || 'analyst@forrestlogistics.com';
+    const userPersona: DevPersona = {
+      id: `usr-${Date.now()}`,
+      name: userEmail.split('@')[0],
+      email: userEmail,
+      role: 'Pricing Analyst',
+      teamContext: 'Pricing Team',
+      avatarInitials: userEmail.substring(0, 2).toUpperCase(),
+      avatarColor: '#1769FF',
+      description: 'Authenticated via Supabase'
+    };
+    setCurrentUser(userPersona);
+    setTeamContext('Pricing Team');
+    try {
+      sessionStorage.setItem('pricing_hub_dev_bypass_persona', JSON.stringify(userPersona));
+    } catch (e) {}
+  };
+
+  const handleSignOut = () => {
+    try {
+      sessionStorage.removeItem('pricing_hub_dev_bypass_persona');
+    } catch (e) {}
+    setCurrentUser(null);
+    setSession(null);
+    supabase.auth.signOut().catch((err) => {
+      console.info('Sign out error:', err);
+    });
+  };
+
+  const handleSwitchPersona = () => {
+    try {
+      sessionStorage.removeItem('pricing_hub_dev_bypass_persona');
+    } catch (e) {}
+    setCurrentUser(null);
+  };
+
+
+  // If not authenticated and dev bypass not active, show Login with Dev Bypass Screen
+  if (!currentUser && !session) {
+    return <Login onBypass={handleBypass} onLoginSuccess={handleLoginSuccess} />;
   }
 
   return (
@@ -654,6 +731,9 @@ export default function App() {
         teamContext={teamContext}
         setTeamContext={setTeamContext}
         onOpenSettings={() => setShowSettingsModal(true)}
+        currentUser={currentUser}
+        onSignOut={handleSignOut}
+        onSwitchPersona={handleSwitchPersona}
       />
 
       {/* Primary Layout Area */}
@@ -664,6 +744,7 @@ export default function App() {
           setActiveTab={setActiveTab}
           onOpenReports={() => setShowReportsModal(true)}
           onOpenSettings={() => setShowSettingsModal(true)}
+          teamContext={teamContext}
         />
 
         {/* Main Workspace Viewport */}
