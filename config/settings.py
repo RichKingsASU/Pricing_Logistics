@@ -87,17 +87,19 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'pricing_logistics_dev',
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': str(BASE_DIR / 'db.sqlite3'),
         'USER': 'pricing_logistics_app',
         'PASSWORD': os.getenv('DATABASE_PASSWORD', ''),
         'HOST': '127.0.0.1',
         'PORT': '5432',
-        'TEST': {
-            'NAME': 'pricing_logistics_test',
-        },
     }
 }
+
+import sys
+if 'test' in sys.argv:
+    DATABASES['default']['ENGINE'] = 'django.db.backends.sqlite3'
+    DATABASES['default']['NAME'] = BASE_DIR / 'test_db.sqlite3'
 
 
 # Password validation

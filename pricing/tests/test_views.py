@@ -2,13 +2,17 @@ from django.test import TestCase
 from django.urls import reverse
 from django.contrib.auth.models import User
 from pricing.models import MarketSummary, LaneException
+from customers.models import Organization
 
 class ControlTowerViewTests(TestCase):
     def setUp(self):
+        self.org = Organization.objects.create(name='Test Org')
         self.user = User.objects.create_user(username='testuser', password='password123')
+        self.org.users.add(self.user)
         self.client.login(username='testuser', password='password123')
 
         MarketSummary.objects.create(
+            organization=self.org,
             name='Test Market',
             region='NW',
             avg_actual=1000,
@@ -21,6 +25,7 @@ class ControlTowerViewTests(TestCase):
         )
 
         LaneException.objects.create(
+            organization=self.org,
             origin='Seattle',
             destination='Portland',
             market='NW',
@@ -34,6 +39,7 @@ class ControlTowerViewTests(TestCase):
         )
         
         LaneException.objects.create(
+            organization=self.org,
             origin='Seattle',
             destination='Spokane',
             market='NW',

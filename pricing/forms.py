@@ -5,7 +5,7 @@ from rates.models import CustomerRateLane
 class LaneExceptionForm(forms.ModelForm):
     class Meta:
         model = LaneException
-        fields = '__all__'
+        exclude = ['created_at', 'updated_at', 'created_by', 'updated_by']
         widgets = {
             'adjusted_date': forms.DateInput(attrs={'type': 'date'}),
         }
@@ -13,7 +13,7 @@ class LaneExceptionForm(forms.ModelForm):
 class PricingAdjustmentForm(forms.ModelForm):
     class Meta:
         model = PricingAdjustment
-        fields = '__all__'
+        exclude = ['created_at', 'updated_at', 'created_by', 'updated_by']
         widgets = {
             'effective_date': forms.DateInput(attrs={'type': 'date'}),
         }
@@ -21,7 +21,7 @@ class PricingAdjustmentForm(forms.ModelForm):
 class CustomerRateLaneForm(forms.ModelForm):
     class Meta:
         model = CustomerRateLane
-        fields = '__all__'
+        exclude = ['created_at', 'updated_at', 'created_by', 'updated_by']
         widgets = {
             'effective_date': forms.DateInput(attrs={'type': 'date'}),
             'expiration_date': forms.DateInput(attrs={'type': 'date'}),
