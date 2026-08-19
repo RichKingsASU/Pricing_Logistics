@@ -113,7 +113,9 @@ def add_rate_lane(request):
             expiration_date='2027-07-01',
             fuel_surcharge_percent=14.5,
             fuel_amount=float(request.POST.get('base_rate', 0)) * 0.145,
-            total_billing=float(request.POST.get('base_rate', 0)) * 1.145
+            total_billing=float(request.POST.get('base_rate', 0)) * 1.145,
+            created_by=request.user,
+            updated_by=request.user
         )
         messages.success(request, f"Rate lane {lane.lane_id} added successfully.")
         return redirect('rate_directory')

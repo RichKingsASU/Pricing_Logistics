@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.auth.models import User
 
 class CustomerRateLane(models.Model):
     STATUS_CHOICES = [
@@ -39,5 +40,16 @@ class CustomerRateLane(models.Model):
     fuel_amount = models.DecimalField(max_digits=10, decimal_places=2)
     total_billing = models.DecimalField(max_digits=10, decimal_places=2)
     
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='created_lanes')
+    updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='updated_lanes')
+    
+    class Meta:
+        constraints = [
+            models.CheckConstraint(condition=models.Q(base_rate__gte=0), name='rates_base_rate_non_negative'),
+            models.CheckConstraint(condition=models.Q(miles__gte=0), name='rates_miles_non_negative'),
+        ]
+
     def __str__(self):
         return f"{self.customer_name}: {self.origin_city} to {self.destination_city}"

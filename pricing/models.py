@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.auth.models import User
 
 class MarketSummary(models.Model):
     name = models.CharField(max_length=100)
@@ -10,6 +11,11 @@ class MarketSummary(models.Model):
     loads = models.IntegerField()
     trend_status = models.CharField(max_length=50)
     status = models.CharField(max_length=50)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='created_markets')
+    updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='updated_markets')
 
     def __str__(self):
         return self.name
@@ -31,6 +37,11 @@ class LaneException(models.Model):
     adjusted_date = models.DateField(null=True, blank=True)
     adjusted_notes = models.TextField(null=True, blank=True)
 
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='created_exceptions')
+    updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='updated_exceptions')
+
     def __str__(self):
         return f"{self.origin} to {self.destination} Exception"
 
@@ -41,6 +52,16 @@ class PricingAdjustment(models.Model):
     status = models.CharField(max_length=50)
     effective_date = models.DateField()
     notes = models.TextField(null=True, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='created_adjustments')
+    updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='updated_adjustments')
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(condition=models.Q(change_percent__gte=-100), name='pricing_change_percent_min'),
+        ]
 
     def __str__(self):
         return self.title
