@@ -2,13 +2,17 @@ from django.test import TestCase
 from django.urls import reverse
 from django.contrib.auth.models import User
 from .models import CustomerRateLane
+from customers.models import Organization
 
 class CustomerRateLaneTests(TestCase):
     def setUp(self):
+        self.org = Organization.objects.create(name='Test Org')
         self.user = User.objects.create_user(username='testuser', password='password123')
+        self.org.users.add(self.user)
         self.client.login(username='testuser', password='password123')
         
         self.lane = CustomerRateLane.objects.create(
+            organization=self.org,
             lane_id='TEST-001',
             customer_name='Test Customer',
             origin_city='Oakland',

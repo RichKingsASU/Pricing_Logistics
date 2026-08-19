@@ -4,17 +4,22 @@ from django.db.models import Sum, F, Q
 from pricing.models import MarketSummary, LaneException, PricingAdjustment
 from rates.models import CustomerRateLane
 
+from customers.decorators import require_organization, resolve_user_organization
+
 @login_required
+@require_organization
 def control_tower(request):
+    org = resolve_user_organization(request)
+    
     # Filters
     selected_region = request.GET.get('region', 'all')
     selected_market_id = request.GET.get('market', 'all')
     kpi_filter = request.GET.get('kpi', 'all')
     
     # Querysets
-    markets = MarketSummary.objects.all()
-    exceptions = LaneException.objects.all()
-    adjustments = PricingAdjustment.objects.filter(status='Pending Approval') # or Scheduled
+    markets = MarketSummary.objects.filter(organization=org)
+    exceptions = LaneException.objects.filter(organization=org)
+    adjustments = PricingAdjustment.objects.filter(organization=org, status='Pending Approval') # or Scheduled
     
     if selected_region != 'all':
         markets = markets.filter(region=selected_region)

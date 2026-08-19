@@ -11,7 +11,7 @@ def run_tests():
     
     try:
         result = subprocess.run(
-            [sys.executable, "manage.py", "test", "rates.e2e_tests", "-v", "2", "--keepdb"],
+            [sys.executable, "manage.py", "test", "rates.e2e_tests", "tests.test_e2e_tenant_isolation_selenium", "-v", "2", "--keepdb"],
             cwd=project_root,
             check=True
         )

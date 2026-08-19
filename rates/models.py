@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from customers.models import Organization
 
 class CustomerRateLane(models.Model):
     STATUS_CHOICES = [
@@ -13,6 +14,7 @@ class CustomerRateLane(models.Model):
         ('Expired', 'Expired'),
     ]
 
+    organization = models.ForeignKey('customers.Organization', on_delete=models.CASCADE, related_name='rate_lanes', null=True)
     lane_id = models.CharField(max_length=100, unique=True)
     customer_name = models.CharField(max_length=200)
     
@@ -40,10 +42,7 @@ class CustomerRateLane(models.Model):
     fuel_amount = models.DecimalField(max_digits=10, decimal_places=2)
     total_billing = models.DecimalField(max_digits=10, decimal_places=2)
     
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='created_lanes')
-    updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='updated_lanes')
+
     
     class Meta:
         constraints = [

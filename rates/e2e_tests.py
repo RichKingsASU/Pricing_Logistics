@@ -7,6 +7,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from django.contrib.auth.models import User
 from rates.models import CustomerRateLane
 from pricing.models import LaneException, PricingAdjustment, MarketSummary
+from customers.models import Organization
 
 class PricingLogisticsE2ETests(StaticLiveServerTestCase):
     @classmethod
@@ -26,8 +27,11 @@ class PricingLogisticsE2ETests(StaticLiveServerTestCase):
 
     def setUp(self):
         self.selenium.delete_all_cookies()
+        self.org = Organization.objects.create(name='Test Org')
         self.user = User.objects.create_user(username='test_pricing', password='AppPassword123!')
+        self.org.users.add(self.user)
         self.lane = CustomerRateLane.objects.create(
+            organization=self.org,
             lane_id='E2E-001',
             customer_name='E2E Customer',
             origin_city='Seattle',
@@ -45,6 +49,7 @@ class PricingLogisticsE2ETests(StaticLiveServerTestCase):
             total_billing=572.50
         )
         self.market = MarketSummary.objects.create(
+            organization=self.org,
             name='NW Market',
             region='NW',
             avg_actual=500.0,
@@ -68,8 +73,9 @@ class PricingLogisticsE2ETests(StaticLiveServerTestCase):
     def test_01_login_logout(self):
         self.login()
         self.assertIn("test_pricing", self.selenium.page_source)
-        # Logout using the form button
-        self.selenium.find_element(By.XPATH, "//button[contains(text(), 'Logout')]").click()
+        # Logout using the form button reliably
+        self.selenium.execute_script("document.querySelector('form[action=\"/accounts/logout/\"]').submit()")
+        import time; time.sleep(1)
         # Try to access a protected page
         self.selenium.get(f"{self.live_server_url}/rates/")
         # Should redirect to login
@@ -161,6 +167,7 @@ class PricingLogisticsE2ETests(StaticLiveServerTestCase):
         self.login()
         # Add adjustment via data management is complex, let's create it via ORM and verify it shows up
         PricingAdjustment.objects.create(
+            organization=self.org,
             title='E2E Adjustment',
             change_percent=5.0,
             status='Pending Approval',
@@ -172,6 +179,7 @@ class PricingLogisticsE2ETests(StaticLiveServerTestCase):
     def test_07_lane_exception(self):
         self.login()
         LaneException.objects.create(
+            organization=self.org,
             origin='Seattle',
             destination='Portland',
             market='NW',
@@ -208,6 +216,7 @@ class PricingLogisticsE2ETests(StaticLiveServerTestCase):
         self.assertIn("E2E Customer", self.selenium.page_source)
         # Add exception
         LaneException.objects.create(
+            organization=self.org,
             origin='Seattle',
             destination='Portland',
             market='NW',

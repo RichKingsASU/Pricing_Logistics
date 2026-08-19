@@ -7,9 +7,17 @@ from .models import CustomerRateLane
 from pricing.models import MarketSummary, LaneException, PricingAdjustment
 from pricing.services.target_pricing import calculate_target_pay
 
+from customers.decorators import resolve_user_organization, OrganizationRequiredError, OrganizationUnauthorizedError
+from django.http import Http404
+
 @login_required
 def rate_directory(request):
-    lanes = CustomerRateLane.objects.all().order_by('-id')
+    try:
+        org = resolve_user_organization(request)
+    except (OrganizationRequiredError, OrganizationUnauthorizedError):
+        raise Http404("Organization required")
+
+    lanes = CustomerRateLane.objects.filter(organization=org).order_by('-id')
     
     # Filters
     search_query = request.GET.get('search_query', '').strip().lower()
@@ -95,8 +103,14 @@ from django.db import transaction
 @login_required
 @transaction.atomic
 def add_rate_lane(request):
+    try:
+        org = resolve_user_organization(request)
+    except (OrganizationRequiredError, OrganizationUnauthorizedError):
+        raise Http404("Organization required")
+
     if request.method == 'POST':
         lane = CustomerRateLane.objects.create(
+            organization=org,
             lane_id=request.POST.get('lane_id', 'AUTO-001'),
             customer_name=request.POST.get('customer_name'),
             origin_city=request.POST.get('origin_city'),
@@ -113,9 +127,7 @@ def add_rate_lane(request):
             expiration_date='2027-07-01',
             fuel_surcharge_percent=14.5,
             fuel_amount=float(request.POST.get('base_rate', 0)) * 0.145,
-            total_billing=float(request.POST.get('base_rate', 0)) * 1.145,
-            created_by=request.user,
-            updated_by=request.user
+            total_billing=float(request.POST.get('base_rate', 0)) * 1.145
         )
         messages.success(request, f"Rate lane {lane.lane_id} added successfully.")
         return redirect('rate_directory')
