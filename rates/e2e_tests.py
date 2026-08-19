@@ -74,7 +74,7 @@ class PricingLogisticsE2ETests(StaticLiveServerTestCase):
         self.login()
         self.assertIn("test_pricing", self.selenium.page_source)
         # Logout using the form button reliably
-        self.selenium.execute_script("document.querySelector('form[action=\"/accounts/logout/\"]').submit()")
+        self.selenium.find_element(By.XPATH, "//button[contains(text(), 'Logout')]").click()
         import time; time.sleep(1)
         # Try to access a protected page
         self.selenium.get(f"{self.live_server_url}/rates/")

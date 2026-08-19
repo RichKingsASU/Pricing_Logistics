@@ -91,9 +91,9 @@ class TenantIsolationSeleniumE2ETests(StaticLiveServerTestCase):
         
         # 6. User B can retrieve Org B's record
         self.selenium.get(self.live_server_url + "/accounts/login/")
-        self.selenium.execute_script("document.getElementsByName('username')[0].value = 'testb@example.com';")
-        self.selenium.execute_script("document.getElementsByName('password')[0].value = 'password123';")
-        self.selenium.find_element(By.TAG_NAME, "form").submit()
+        self.selenium.find_element(By.NAME, "username").send_keys('testb@example.com')
+        self.selenium.find_element(By.NAME, "password").send_keys('password123')
+        self.selenium.find_element(By.CSS_SELECTOR, "button[type='submit']").click()
         WebDriverWait(self.selenium, 5).until(
             EC.presence_of_element_located((By.CLASS_NAME, "top-nav"))
         )
@@ -107,16 +107,16 @@ class TenantIsolationSeleniumE2ETests(StaticLiveServerTestCase):
         org_b_id = data_b[0]['organization_id']
         
         # Logout User B using form submit
-        self.selenium.execute_script("document.querySelector('form[action=\"/accounts/logout/\"]').submit()")
+        self.selenium.find_element(By.XPATH, "//button[contains(text(), 'Logout')]").click()
         time.sleep(1)
 
         # 3. Login obtains and submits valid CSRF token
         # 13. Refresh preserves the authenticated session before logout.
         self.selenium.get(self.live_server_url + "/accounts/login/")
         current_url_login = self.selenium.current_url
-        self.selenium.execute_script("document.getElementsByName('username')[0].value = 'testa@example.com';")
-        self.selenium.execute_script("document.getElementsByName('password')[0].value = 'password123';")
-        self.selenium.find_element(By.TAG_NAME, "form").submit()
+        self.selenium.find_element(By.NAME, "username").send_keys('testa@example.com')
+        self.selenium.find_element(By.NAME, "password").send_keys('password123')
+        self.selenium.find_element(By.CSS_SELECTOR, "button[type='submit']").click()
         WebDriverWait(self.selenium, 5).until(EC.url_changes(current_url_login))
         
         self.selenium.refresh()
