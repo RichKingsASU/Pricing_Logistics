@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import * as XLSX from 'xlsx';
 import { Region, CustomerRateLane, LaneException } from '../../types';
+import { sanitizeSpreadsheetCell } from '../../utils/spreadsheetSanitizer';
 
 interface ExportCarrierTargetsModalProps {
   isOpen: boolean;
@@ -46,7 +47,7 @@ export const ExportCarrierTargetsModal: React.FC<ExportCarrierTargetsModalProps>
 
     // Transform into clean export rows without Equipment or Lane ID as explicitly requested
     const exportRows = filteredExceptions.map((exc) => {
-      return {
+      const row = {
         'Origin': exc.origin,
         'Destination': exc.destination,
         'Region': exc.market,
@@ -60,6 +61,12 @@ export const ExportCarrierTargetsModal: React.FC<ExportCarrierTargetsModalProps>
         'Timeframe Period': timeframe,
         'Export Date': new Date().toLocaleDateString('en-US')
       };
+
+      const sanitizedRow: Record<string, any> = {};
+      for (const [key, val] of Object.entries(row)) {
+        sanitizedRow[key] = sanitizeSpreadsheetCell(val);
+      }
+      return sanitizedRow;
     });
 
     if (exportRows.length === 0) {
