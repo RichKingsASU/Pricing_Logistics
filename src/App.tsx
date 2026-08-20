@@ -15,7 +15,6 @@ import {
   initialDatasets,
   initialValidationIssues
 } from './data/initialData';
-import { supabase } from './lib/supabaseClient';
 import { authService, marketService, exceptionService, adjustmentService, rateLaneService } from './services/api';
 
 import { TopNavBar } from './components/TopNavBar';
@@ -51,19 +50,14 @@ export default function App() {
   const [session, setSession] = useState<any>(null);
   const [authLoading, setAuthLoading] = useState(true);
 
+  const fetchSession = async () => {
+    const sessionData = await authService.getSession();
+    setSession(sessionData);
+    setAuthLoading(false);
+  };
+
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setAuthLoading(false);
-    });
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-    });
-
-    return () => subscription.unsubscribe();
+    fetchSession();
   }, []);
 
   useEffect(() => {
@@ -227,7 +221,7 @@ export default function App() {
           if (!(exc.isKeyAccount && excludeKeyAccounts)) {
              const newVar = Math.round(exc.avgActual - target);
              const newVarPct = Math.round((newVar / target) * 1000) / 10;
-             await supabase.from('lane_exceptions').update({
+             await exceptionService.updateException(id, {
                current_target: target,
                var_dollars: newVar,
                var_percent: newVarPct,
@@ -235,7 +229,7 @@ export default function App() {
                last_adjusted_target: target,
                adjusted_date: new Date().toISOString().split('T')[0],
                adjusted_notes: notes
-             }).eq('id', id);
+             });
           }
         }
       }
@@ -244,27 +238,27 @@ export default function App() {
       if (matchingMarket) {
          const newVar = Math.round(matchingMarket.avgActual - target);
          const newVarPct = Math.round((newVar / target) * 1000) / 10;
-         await supabase.from('market_summaries').update({
+         await marketService.updateMarket(id, {
            avg_target: target,
            variance_dollars: newVar,
            variance_percent: newVarPct
-         }).eq('id', id);
+         });
       }
 
       const matchingLane = customerLanes.find(l => l.id === id);
       if (matchingLane) {
-        await supabase.from('customer_rate_lanes').update({
+        await rateLaneService.updateCustomerLane(id, {
            base_rate: target,
            total_billing: Math.round((target * (1 + matchingLane.fuelSurchargePercent / 100)) * 100) / 100
-        }).eq('id', id);
+        });
       // Insert adjustment using new table name
-      await supabase.from('pricing_adjustments').insert([{
+      await adjustmentService.createAdjustment({
         title: `Lane Adjustment (${changePercent >= 0 ? '+' : ''}${changePercent}%)`,
         change_percent: changePercent,
         status: 'Scheduled',
         effective_date: new Date().toISOString(),
         notes: `Adjusted based on target mapping to ${target}`
-      }]);
+      });
       }
     } catch (err) {
       console.error('Error saving adjustment to Supabase:', err);
@@ -484,8 +478,7 @@ export default function App() {
     setCustomerLanes((prev) => [newLane1, newLane2, ...prev]);
 
     try {
-      await supabase.from('customer_rate_lanes').insert([
-        {
+      await rateLaneService.createCustomerLane({
           lane_id: newLane1.laneId,
           customer_name: newLane1.customerName,
           origin_city: newLane1.originCity,
@@ -503,8 +496,8 @@ export default function App() {
           fuel_surcharge_percent: newLane1.fuelSurchargePercent,
           fuel_amount: newLane1.fuelAmount,
           total_billing: newLane1.totalBilling
-        },
-        {
+      });
+      await rateLaneService.createCustomerLane({
           lane_id: newLane2.laneId,
           customer_name: newLane2.customerName,
           origin_city: newLane2.originCity,
@@ -522,8 +515,7 @@ export default function App() {
           fuel_surcharge_percent: newLane2.fuelSurchargePercent,
           fuel_amount: newLane2.fuelAmount,
           total_billing: newLane2.totalBilling
-        }
-      ]);
+      });
     } catch (err) {
       console.error('Error committing changes to Supabase:', err);
     }
@@ -640,7 +632,7 @@ export default function App() {
   }
 
   if (!session) {
-    return <Login />;
+    return <Login onLoginSuccess={() => fetchSession()} />;
   }
 
   return (

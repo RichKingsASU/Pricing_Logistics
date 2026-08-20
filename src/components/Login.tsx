@@ -1,13 +1,22 @@
-import React, { useState } from 'react';
-import { supabase } from '../lib/supabaseClient';
+import React, { useState, useEffect } from 'react';
 import { Package, LogIn, UserPlus, AlertCircle } from 'lucide-react';
+import { authService } from '../services/api';
 
-export const Login: React.FC = () => {
+interface LoginProps {
+  onLoginSuccess: () => void;
+}
+
+export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    // Attempt to fetch CSRF token by calling a safe endpoint first (or rely on Django setting it)
+    fetch('/api/auth/me/', { credentials: 'include' }).catch(() => {});
+  }, []);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -16,18 +25,25 @@ export const Login: React.FC = () => {
 
     try {
       if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password
+        const response = await fetch('/api/auth/login/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            // Try to grab CSRF token just in case
+            'X-CSRFToken': document.cookie.split('; ').find(row => row.startsWith('csrftoken='))?.split('=')[1] || ''
+          },
+          credentials: 'include',
+          body: JSON.stringify({ email, password })
         });
-        if (error) throw error;
+        
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}));
+          throw new Error(errData.error || 'Invalid credentials');
+        }
+        
+        onLoginSuccess();
       } else {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password
-        });
-        if (error) throw error;
-        // Optionally show a message about confirming email if Supabase requires it
+        setError('Sign up is disabled for this demo environment.');
       }
     } catch (err: any) {
       setError(err.message || 'An error occurred during authentication');
@@ -68,13 +84,13 @@ export const Login: React.FC = () => {
 
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-slate-700">
-                Email address
+                Email address or Username
               </label>
               <div className="mt-1">
                 <input
                   id="email"
                   name="email"
-                  type="email"
+                  type="text"
                   autoComplete="email"
                   required
                   value={email}
