@@ -1,6 +1,7 @@
 from django.urls import path
 from .views.control_tower import control_tower
 from .views.data_management import data_management, edit_lane, edit_adjustment, edit_exception
+from . import api
 
 urlpatterns = [
     path('control-tower/', control_tower, name='control_tower'),
@@ -8,4 +9,12 @@ urlpatterns = [
     path('data-management/lane/<int:lane_id>/edit/', edit_lane, name='edit_lane_data'),
     path('data-management/adjustment/<int:pk>/edit/', edit_adjustment, name='edit_adjustment'),
     path('data-management/exception/<int:pk>/edit/', edit_exception, name='edit_exception'),
+    
+    # API endpoints
+    path('api/market_summaries/', api.market_summaries_api, name='api_market_summaries'),
+    path('api/market_summaries/<int:pk>/', api.market_summaries_api, name='api_market_summaries_detail'),
+    path('api/lane_exceptions/', api.lane_exceptions_api, name='api_lane_exceptions'),
+    path('api/lane_exceptions/<int:pk>/', api.lane_exceptions_api, name='api_lane_exceptions_detail'),
+    path('api/pricing_adjustments/', api.pricing_adjustments_api, name='api_pricing_adjustments'),
+    path('api/pricing_adjustments/<int:pk>/', api.pricing_adjustments_api, name='api_pricing_adjustments_detail'),
 ]

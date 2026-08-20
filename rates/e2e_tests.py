@@ -13,16 +13,35 @@ class PricingLogisticsE2ETests(StaticLiveServerTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
+        import tempfile
+        cls.temp_profile = tempfile.mkdtemp()
         options = webdriver.ChromeOptions()
-        options.add_argument('--headless')
+        options.add_argument('--headless=new')
+        options.add_argument('--incognito')
         options.add_argument('--disable-gpu')
         options.add_argument('--no-sandbox')
+        options.add_argument('--disable-save-password-bubble')
+        options.add_argument('--disable-features=PasswordManagerOnboarding')
+        options.add_argument(f'--user-data-dir={cls.temp_profile}')
+
+        options.add_experimental_option("prefs", {
+            "credentials_enable_service": False,
+            "profile.password_manager_enabled": False,
+            "profile.password_manager_leak_detection": False,
+            "autofill.profile_enabled": False,
+            "autofill.credit_card_enabled": False,
+        })
         cls.selenium = webdriver.Chrome(options=options)
         cls.selenium.implicitly_wait(5)
 
     @classmethod
     def tearDownClass(cls):
         cls.selenium.quit()
+        import shutil
+        try:
+            shutil.rmtree(cls.temp_profile, ignore_errors=True)
+        except Exception:
+            pass
         super().tearDownClass()
 
     def setUp(self):
@@ -63,8 +82,26 @@ class PricingLogisticsE2ETests(StaticLiveServerTestCase):
 
     def login(self):
         self.selenium.get(f"{self.live_server_url}/accounts/login/")
-        self.selenium.find_element(By.NAME, "username").send_keys("test_pricing")
-        self.selenium.find_element(By.NAME, "password").send_keys("AppPassword123!")
+        username_field = WebDriverWait(self.selenium, 10).until(
+            EC.element_to_be_clickable((By.NAME, "username"))
+        )
+        password_field = self.selenium.find_element(By.NAME, "password")
+
+        from selenium.webdriver.common.keys import Keys
+        username_field.click()
+        username_field.send_keys(Keys.CONTROL, "a")
+        username_field.send_keys(Keys.DELETE)
+        username_field.send_keys("test_pricing")
+
+        WebDriverWait(self.selenium, 5).until(
+            lambda d: d.find_element(By.NAME, "username").get_attribute("value") == "test_pricing"
+        )
+
+        password_field.click()
+        password_field.send_keys(Keys.CONTROL, "a")
+        password_field.send_keys(Keys.DELETE)
+        password_field.send_keys("AppPassword123!")
+
         self.selenium.find_element(By.CSS_SELECTOR, "button[type='submit']").click()
         WebDriverWait(self.selenium, 5).until(
             EC.presence_of_element_located((By.CLASS_NAME, "top-nav"))
@@ -74,8 +111,13 @@ class PricingLogisticsE2ETests(StaticLiveServerTestCase):
         self.login()
         self.assertIn("test_pricing", self.selenium.page_source)
         # Logout using the form button reliably
-        self.selenium.find_element(By.XPATH, "//button[contains(text(), 'Logout')]").click()
-        import time; time.sleep(1)
+        logout_button = WebDriverWait(self.selenium, 10).until(
+            EC.element_to_be_clickable((By.XPATH, "//button[contains(normalize-space(), 'Logout')]"))
+        )
+        logout_button.click()
+        WebDriverWait(self.selenium, 10).until(
+            EC.url_contains("/accounts/login")
+        )
         # Try to access a protected page
         self.selenium.get(f"{self.live_server_url}/rates/")
         # Should redirect to login
@@ -90,34 +132,34 @@ class PricingLogisticsE2ETests(StaticLiveServerTestCase):
     def test_03_create_lane(self):
         self.login()
         self.selenium.get(f"{self.live_server_url}/rates/add/")
-        
+
         lane_id_input = self.selenium.find_element(By.NAME, "lane_id")
         lane_id_input.clear()
         lane_id_input.send_keys("NEW-LANE")
-        
+
         customer_name_input = self.selenium.find_element(By.NAME, "customer_name")
         customer_name_input.clear()
         customer_name_input.send_keys("New Corp")
-        
+
         origin_input = self.selenium.find_element(By.NAME, "origin_city")
         origin_input.clear()
         origin_input.send_keys("Los Angeles")
-        
+
         dest_input = self.selenium.find_element(By.NAME, "destination_city")
         dest_input.clear()
         dest_input.send_keys("Las Vegas")
-        
+
         base_rate_input = self.selenium.find_element(By.NAME, "base_rate")
         base_rate_input.clear()
         base_rate_input.send_keys("800")
-        
+
         miles_input = self.selenium.find_element(By.NAME, "miles")
         miles_input.clear()
         miles_input.send_keys("270")
-        
+
         current_url = self.selenium.current_url
         self.selenium.find_element(By.XPATH, "//button[contains(text(), 'Save Rate Lane')]").click()
-        
+
         try:
             WebDriverWait(self.selenium, 5).until(
                 EC.url_changes(current_url)
@@ -135,17 +177,17 @@ class PricingLogisticsE2ETests(StaticLiveServerTestCase):
         base_rate_input = self.selenium.find_element(By.NAME, "base_rate")
         base_rate_input.clear()
         base_rate_input.send_keys("600")
-        
+
         # Fill raw_origin and raw_destination which are required by ModelForm
         self.selenium.find_element(By.NAME, "raw_origin").send_keys("Seattle")
         self.selenium.find_element(By.NAME, "raw_destination").send_keys("Portland")
-        
+
         self.selenium.find_element(By.XPATH, "//button[contains(text(), 'Save Changes')]").click()
-        
+
         WebDriverWait(self.selenium, 5).until(
             EC.url_contains("tab=lanes")
         )
-            
+
         self.lane.refresh_from_db()
         self.assertEqual(float(self.lane.base_rate), 600.0)
 
@@ -157,7 +199,7 @@ class PricingLogisticsE2ETests(StaticLiveServerTestCase):
         self.selenium.find_element(By.NAME, "dest").send_keys("Portland")
         self.selenium.find_element(By.NAME, "miles").send_keys("173")
         self.selenium.find_element(By.XPATH, "//button[contains(text(), 'Search Target')]").click()
-        
+
         WebDriverWait(self.selenium, 5).until(
             EC.presence_of_element_located((By.XPATH, "//h2[contains(text(), '$977')]"))
         )

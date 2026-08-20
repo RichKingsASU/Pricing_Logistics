@@ -32,11 +32,11 @@
                 {% csrf_token %}
                 <div class="mb-3">
                     <label class="form-label fw-bold" style="font-size: 12px;">Username</label>
-                    <input type="text" name="username" class="form-control" autofocus required>
+                    <input type="text" name="username" autocomplete="username" class="form-control" autofocus required>
                 </div>
                 <div class="mb-4">
                     <label class="form-label fw-bold" style="font-size: 12px;">Password</label>
-                    <input type="password" name="password" class="form-control" required>
+                    <input type="password" name="password" autocomplete="current-password" class="form-control" required>
                 </div>
                 <button type="submit" class="btn btn-primary w-100 fw-bold">Sign In</button>
                 <input type="hidden" name="next" value="{{ next }}">

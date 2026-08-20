@@ -21,6 +21,18 @@ export default defineConfig(() => {
         '/api': {
           target: 'http://localhost:8000',
           changeOrigin: true
+        },
+        '/pricing/api': {
+          target: 'http://localhost:8000',
+          changeOrigin: true
+        },
+        '/customers/api': {
+          target: 'http://localhost:8000',
+          changeOrigin: true
+        },
+        '/rates/api': {
+          target: 'http://localhost:8000',
+          changeOrigin: true
         }
       }
     },

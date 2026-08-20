@@ -194,11 +194,9 @@ export const TargetControlTower: React.FC<TargetControlTowerProps> = ({
   };
 
   const activeMarket = markets.find((m) => m.id === selectedMarketId) || markets[0];
-  if (!activeMarket) {
-    return <div className="p-4 text-gray-500">No market data available.</div>;
-  }
-
-  const activeMarketNameClean = activeMarket.name.replace(/( Market| Hub| Port| Terminal| City)/g, '');
+  const activeMarketId = activeMarket ? activeMarket.id : '';
+  const activeMarketName = activeMarket ? activeMarket.name : '';
+  const activeMarketNameClean = activeMarketName.replace(/( Market| Hub| Port| Terminal| City)/g, '');
 
   // Helper to match lane exceptions to market
   const isLaneInMarket = (lane: LaneException, mktId: string, mktName: string): boolean => {
@@ -261,7 +259,7 @@ export const TargetControlTower: React.FC<TargetControlTowerProps> = ({
     return laneExceptions.filter((exc) => {
       const matchesRegion = selectedRegion === 'USA' || exc.market === selectedRegion;
       const matchesMarketFilter =
-        !filterToSelectedMarket || isLaneInMarket(exc, activeMarket.id, activeMarket.name);
+        !filterToSelectedMarket || isLaneInMarket(exc, activeMarketId, activeMarketName);
       const matchesAcctMgr =
         selectedAccountManager === 'all' || exc.accountManager === selectedAccountManager;
       const matchesCust =
@@ -288,7 +286,8 @@ export const TargetControlTower: React.FC<TargetControlTowerProps> = ({
     laneExceptions,
     selectedRegion,
     filterToSelectedMarket,
-    activeMarket,
+    activeMarketId,
+    activeMarketName,
     selectedAccountManager,
     selectedCustomerFilter,
     selectedCarrierFilter,
@@ -321,14 +320,14 @@ export const TargetControlTower: React.FC<TargetControlTowerProps> = ({
 
   // Market Lanes specifically for active market (and matching KPI filter)
   const activeMarketLanes = laneExceptions.filter(
-    (l) => isLaneInMarket(l, activeMarket.id, activeMarket.name) && matchesKpiFilter(l, kpiFilter)
+    (l) => isLaneInMarket(l, activeMarketId, activeMarketName) && matchesKpiFilter(l, kpiFilter)
   );
 
   // Filter exceptions by region, selected market toggle, KPI filter, adjustment status & global search
   const filteredExceptions = laneExceptions.filter((exc) => {
     const matchesRegion = selectedRegion === 'USA' || exc.market === selectedRegion;
     const matchesMarketFilter =
-      !filterToSelectedMarket || isLaneInMarket(exc, activeMarket.id, activeMarket.name);
+      !filterToSelectedMarket || isLaneInMarket(exc, activeMarketId, activeMarketName);
     const matchesAcctMgr =
       selectedAccountManager === 'all' || exc.accountManager === selectedAccountManager;
     const matchesCust =
@@ -401,6 +400,10 @@ export const TargetControlTower: React.FC<TargetControlTowerProps> = ({
         return 'All Analyzed Loads';
     }
   };
+
+  if (!activeMarket) {
+    return <div className="p-4 text-gray-500">No market data available.</div>;
+  }
 
   return (
     <div className="space-y-6 animate-in fade-in duration-200 pb-12">

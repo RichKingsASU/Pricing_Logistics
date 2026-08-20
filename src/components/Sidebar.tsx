@@ -131,6 +131,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <span className="material-symbols-outlined text-[18px]">help</span>
           <span>Support & Help</span>
         </a>
+        <a
+          href="#logout"
+          onClick={async (e) => {
+            e.preventDefault();
+            if (confirm('Are you sure you want to log out of Forrest Logistics Pricing Hub?')) {
+              const { authService } = await import('../services/api');
+              await authService.signOut();
+              window.location.reload();
+            }
+          }}
+          className="flex items-center gap-3 px-4 py-2 rounded-lg text-[#D64545] hover:bg-[#ffdad6]/30 transition-all text-xs font-semibold"
+        >
+          <span className="material-symbols-outlined text-[18px]">logout</span>
+          <span>Log Out</span>
+        </a>
         <div className="flex items-center gap-3 px-3 py-2 rounded-lg text-[#64748B] text-xs bg-[#F8FAFC] border border-[#E2E8F0]/60 mt-1">
           <span className="material-symbols-outlined text-[18px] text-[#1769FF]">verified_user</span>
           <div className="flex flex-col leading-tight">
@@ -138,6 +153,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <span className="text-[10px] text-[#64748B]">All Modules Unlocked</span>
           </div>
         </div>
+
       </div>
     </aside>
   );
