@@ -126,10 +126,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
             e.preventDefault();
             alert('Forrest Logistics Support Hotline: 1-800-555-FORREST\nEmail: pricing-support@forrestlogistics.com');
           }}
-          className="flex items-center gap-3 px-4 py-2 rounded-lg text-[#45474d] hover:bg-[#F4F7FA] transition-all text-xs"
+          className="flex items-center gap-3 px-4 py-2 rounded-lg text-[#45474d] hover:bg-[#F4F7FA] transition-all text-xs font-medium"
         >
           <span className="material-symbols-outlined text-[18px]">help</span>
-          <span>Support</span>
+          <span>Support & Help</span>
         </a>
         <a
           href="#logout"
@@ -146,6 +146,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <span className="material-symbols-outlined text-[18px]">logout</span>
           <span>Log Out</span>
         </a>
+        <div className="flex items-center gap-3 px-3 py-2 rounded-lg text-[#64748B] text-xs bg-[#F8FAFC] border border-[#E2E8F0]/60 mt-1">
+          <span className="material-symbols-outlined text-[18px] text-[#1769FF]">verified_user</span>
+          <div className="flex flex-col leading-tight">
+            <span className="font-bold text-[#0B1930] text-[11px]">Direct Access Mode</span>
+            <span className="text-[10px] text-[#64748B]">All Modules Unlocked</span>
+          </div>
+        </div>
+
       </div>
     </aside>
   );

@@ -203,5 +203,13 @@ export interface ReportedIssue {
   status: 'Open / Dispatched to Pricing' | 'In Review' | 'Resolved';
 }
 
-
-
+export interface DevPersona {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  teamContext: 'Pricing Team' | 'Operations';
+  avatarInitials: string;
+  avatarColor: string;
+  description: string;
+}
