@@ -11,3 +11,4 @@ test-results/
 __pycache__/
 *.py[cod]
 .pytest_cache/
+export_build/
